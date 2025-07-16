@@ -159,6 +159,14 @@ flake8 src/
 mypy src/
 ```
 
+## Documentation
+
+- [Event Logging Guide](docs/EVENT_LOGGING.md) - Comprehensive event system documentation
+- [Claude Code Commands](docs/CLAUDE_CODE_COMMANDS.md) - Custom slash commands for quick access
+- [API Reference](docs/API.md) - Coming soon
+- [Security Guide](docs/SECURITY.md) - Coming soon
+- [Deployment Guide](docs/DEPLOYMENT.md) - Coming soon
+
 ## Security & Compliance
 
 SuperSleuth Network implements enterprise-grade security:
