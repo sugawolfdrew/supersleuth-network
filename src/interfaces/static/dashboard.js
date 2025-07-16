@@ -185,8 +185,9 @@ async function updateCurrentDiagnostics() {
 // Run diagnostic
 async function runDiagnostic(type) {
     const button = event.target;
+    const originalText = button.textContent;
     button.disabled = true;
-    button.innerHTML = '<span class="spinner"></span> Running...';
+    button.innerHTML = '<span class="spinner"></span> Starting...';
     
     try {
         const response = await fetch('/api/diagnostics/run', {
@@ -203,8 +204,10 @@ async function runDiagnostic(type) {
         
         const result = await response.json();
         
-        // Show notification
-        showAlert(`${type.replace('_', ' ')} completed`, 'success');
+        if (result.diagnostic_id) {
+            // Poll for progress
+            await pollDiagnosticProgress(result.diagnostic_id, button, originalText);
+        }
         
         // Update history
         updateDiagnosticHistory();
@@ -214,11 +217,46 @@ async function runDiagnostic(type) {
         
     } catch (error) {
         showAlert('Diagnostic failed: ' + error.message, 'error');
-    } finally {
         button.disabled = false;
-        button.innerHTML = button.innerHTML.replace('<span class="spinner"></span> Running...', 
-                                                   button.textContent);
+        button.innerHTML = originalText;
     }
+}
+
+// Poll for diagnostic progress
+async function pollDiagnosticProgress(diagnosticId, button, originalText) {
+    const progressInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/diagnostics/progress/${diagnosticId}`);
+            if (!response.ok) {
+                clearInterval(progressInterval);
+                button.disabled = false;
+                button.innerHTML = originalText;
+                return;
+            }
+            
+            const progress = await response.json();
+            
+            // Update button with progress
+            if (progress.status === 'running' || progress.status === 'initializing') {
+                button.innerHTML = `<span class="spinner"></span> ${progress.progress}% - ${progress.message}`;
+            } else if (progress.status === 'completed') {
+                clearInterval(progressInterval);
+                button.disabled = false;
+                button.innerHTML = originalText;
+                showAlert(`${progress.type.replace('_', ' ')} completed successfully!`, 'success');
+            } else if (progress.status === 'error') {
+                clearInterval(progressInterval);
+                button.disabled = false;
+                button.innerHTML = originalText;
+                showAlert(`Diagnostic error: ${progress.message}`, 'error');
+            }
+        } catch (error) {
+            clearInterval(progressInterval);
+            button.disabled = false;
+            button.innerHTML = originalText;
+            console.error('Progress polling error:', error);
+        }
+    }, 500); // Poll every 500ms
 }
 
 // Update diagnostic history

@@ -61,10 +61,8 @@ class SecurityAssessment(BaseDiagnostic):
             'compliance_note': f'Assessment for: {", ".join(self.compliance_frameworks)}'
         }
     
-    def run(self) -> DiagnosticResult:
-        """Execute security assessment"""
-        
-        result = DiagnosticResult("Security Assessment")
+    def _run_diagnostic(self, result: DiagnosticResult):
+        """Execute security assessment diagnostic"
         
         try:
             self.logger.info(f"Starting security assessment for compliance: {', '.join(self.compliance_frameworks)}")
@@ -118,8 +116,6 @@ class SecurityAssessment(BaseDiagnostic):
         except Exception as e:
             self.logger.error(f"Security assessment failed: {str(e)}")
             result.fail(str(e))
-        
-        return result
     
     def _check_tool_available(self, tool: str) -> bool:
         """Check if a tool is available on the system"""

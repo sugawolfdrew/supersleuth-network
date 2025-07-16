@@ -68,10 +68,8 @@ class PerformanceAnalysis(BaseDiagnostic):
             'business_impact': 'Temporary bandwidth utilization during testing'
         }
     
-    def run(self) -> DiagnosticResult:
-        """Execute performance analysis"""
-        
-        result = DiagnosticResult("Performance Analysis")
+    def _run_diagnostic(self, result: DiagnosticResult):
+        """Execute performance analysis diagnostic"
         
         try:
             self.logger.info("Starting performance analysis")
@@ -109,8 +107,6 @@ class PerformanceAnalysis(BaseDiagnostic):
         except Exception as e:
             self.logger.error(f"Performance analysis failed: {str(e)}")
             result.fail(str(e))
-        
-        return result
     
     def _check_tool_available(self, tool: str) -> bool:
         """Check if a tool is available on the system"""

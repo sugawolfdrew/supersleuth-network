@@ -57,10 +57,8 @@ class NetworkDiscovery(BaseDiagnostic):
             'requires_approval': True
         }
     
-    def run(self) -> DiagnosticResult:
-        """Execute network discovery"""
-        
-        result = DiagnosticResult("Network Discovery")
+    def _run_diagnostic(self, result: DiagnosticResult):
+        """Execute network discovery diagnostic"""
         
         try:
             self.logger.info("Starting network discovery scan")
@@ -91,8 +89,6 @@ class NetworkDiscovery(BaseDiagnostic):
         except Exception as e:
             self.logger.error(f"Network discovery failed: {str(e)}")
             result.fail(str(e))
-        
-        return result
     
     def _check_tool_available(self, tool: str) -> bool:
         """Check if a tool is available on the system"""

@@ -63,10 +63,8 @@ class WiFiAnalysis(BaseDiagnostic):
             'note': 'Passive WiFi scanning only'
         }
     
-    def run(self) -> DiagnosticResult:
-        """Execute WiFi analysis"""
-        
-        result = DiagnosticResult("WiFi Infrastructure Analysis")
+    def _run_diagnostic(self, result: DiagnosticResult):
+        """Execute WiFi analysis diagnostic"""
         
         try:
             self.logger.info("Starting WiFi infrastructure analysis")
@@ -111,8 +109,6 @@ class WiFiAnalysis(BaseDiagnostic):
         except Exception as e:
             self.logger.error(f"WiFi analysis failed: {str(e)}")
             result.fail(str(e))
-        
-        return result
     
     def _check_tool_available(self, tool: str) -> bool:
         """Check if a tool is available on the system"""

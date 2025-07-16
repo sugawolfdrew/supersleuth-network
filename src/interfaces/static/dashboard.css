@@ -145,6 +145,8 @@ main {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 180px;
+    justify-content: center;
 }
 
 .btn-primary {
