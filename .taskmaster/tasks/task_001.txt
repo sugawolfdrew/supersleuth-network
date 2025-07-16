@@ -1,0 +1,117 @@
+# Task ID: 1
+# Title: Replace Mock Monitoring Metrics with Real System Data
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: Replace randomly generated metrics with real system data by creating modular, Claude Code-orchestrated monitoring tools that can be programmatically invoked.
+# Details:
+This task involves developing adaptable Python monitoring modules that Claude Code can combine, modify, and customize based on IT professional needs. Implementation steps:
+1. Integrate psutil library for CPU/memory metrics collection
+2. Use netifaces for network interface statistics
+3. Implement modular diagnostic functions that can be invoked programmatically
+4. Design a flexible API for monitoring components
+5. Add data validation to ensure accuracy
+
+Files to modify:
+- src/core/monitoring.py
+- src/interfaces/monitoring_api.py (new file)
+
+Code example for CPU metrics:
+```python
+import psutil
+
+def get_cpu_metrics():
+    cpu_percent = psutil.cpu_percent(interval=1, percpu=True)
+    cpu_times = psutil.cpu_times_percent(interval=1, percpu=True)
+    return {
+        'percent': cpu_percent,
+        'times': cpu_times,
+        'count': psutil.cpu_count(logical=True)
+    }
+```
+
+# Test Strategy:
+1. Unit tests for each metric collection function to verify data accuracy
+2. Integration tests to ensure monitoring API correctly provides real metrics
+3. Performance tests to measure overhead of real data collection
+4. Compatibility tests to verify Claude Code can effectively orchestrate the monitoring modules
+5. Usability tests with sample Claude Code prompts to validate the API design
+
+# Subtasks:
+## 2. Implement Memory and Disk Metrics Collection [pending]
+### Dependencies: 1.1
+### Description: Create modular diagnostic functions to collect real memory usage and disk I/O statistics using psutil.
+### Details:
+1. Create get_memory_metrics() function to collect RAM usage, available memory, and swap usage
+2. Implement get_disk_metrics() to gather disk usage, I/O statistics, and read/write rates
+3. Design functions to be independently callable and composable
+4. Add appropriate error handling for cases where disk metrics might be unavailable
+5. Ensure each function returns structured data suitable for programmatic analysis
+6. Document each function with clear input/output specifications for Claude Code integration
+
+## 3. Implement Network Interface Metrics with netifaces [pending]
+### Dependencies: 1.1
+### Description: Integrate the netifaces library to create modular diagnostic functions for network interface statistics.
+### Details:
+1. Install netifaces library if not already installed
+2. Create get_network_metrics() function in src/core/monitoring.py
+3. Use netifaces to identify all network interfaces
+4. Collect bytes sent/received, packets sent/received, and errors for each interface
+5. Calculate bandwidth usage based on delta between measurements
+6. Design function to be independently callable with optional parameters for filtering interfaces
+7. Document the function with clear input/output specifications for Claude Code integration
+
+## 4. Create Flexible Monitoring API [pending]
+### Dependencies: 1.1, 1.2, 1.3
+### Description: Design and implement a flexible API that allows Claude Code to orchestrate monitoring functions based on IT professional needs.
+### Details:
+1. Create src/interfaces/monitoring_api.py to serve as the main entry point
+2. Design a clean, well-documented API that Claude Code can easily understand and use
+3. Implement functions that can combine different monitoring metrics based on parameters
+4. Add configuration options for sampling rates and data retention
+5. Create helper functions that format monitoring data in various useful ways (JSON, CSV, etc.)
+6. Ensure all functions have clear docstrings explaining their purpose and usage
+7. Add examples of how Claude Code might orchestrate these functions
+
+## 5. Implement Advanced Diagnostic Functions [pending]
+### Dependencies: 1.4
+### Description: Create specialized diagnostic functions that go beyond basic metrics to provide deeper system insights.
+### Details:
+1. Implement process_analysis() to identify resource-intensive processes
+2. Create system_bottleneck_detection() to highlight potential performance issues
+3. Develop historical_trend_analysis() to track metrics over time
+4. Add anomaly_detection() to identify unusual system behavior
+5. Ensure all functions can be called independently or as part of a diagnostic suite
+6. Document each function with examples of how Claude Code might use them
+7. Add appropriate error handling and fallback mechanisms
+
+## 6. Create Claude Code Integration Examples [pending]
+### Dependencies: 1.4, 1.5
+### Description: Develop example scenarios and documentation showing how Claude Code can orchestrate the monitoring tools.
+### Details:
+1. Create a documentation file with example Claude Code prompts
+2. Develop sample scenarios for common IT troubleshooting tasks
+3. Show how Claude Code can combine different monitoring functions
+4. Provide examples of how to interpret the monitoring data
+5. Create templates for common monitoring workflows
+6. Document best practices for IT professionals to request custom monitoring via Claude Code
+7. Include examples of how Claude Code can generate visualizations or reports from the monitoring data
+
+## 1. Implement CPU Metrics Collection with psutil [done]
+### Dependencies: None
+### Description: Integrate the psutil library to collect real CPU metrics including usage percentage, times, and count information.
+### Details:
+1. Install psutil library if not already installed
+2. Create functions in src/core/monitoring.py to collect CPU metrics
+3. Implement get_cpu_metrics() function as shown in the example
+4. Add error handling for potential system access issues
+5. Ensure appropriate sampling intervals to avoid performance impact
+6. Replace mock CPU data generation with the new real metrics collection
+<info added on 2025-07-16T17:28:52.429Z>
+7. Investigate why monitoring values still appear simulated despite dashboard running correctly
+8. Check if the real metrics collection functions are being properly called in the dashboard code
+9. Verify data flow from monitoring.py to the dashboard visualization components
+10. Add logging statements to trace metrics collection and transmission
+11. Compare output values with expected ranges for real CPU metrics to identify simulation patterns
+</info added on 2025-07-16T17:28:52.429Z>
+

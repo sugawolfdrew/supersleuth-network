@@ -1,0 +1,103 @@
+# Task ID: 3
+# Title: Implement Comprehensive Network Scanning
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Create modular network diagnostic tools that Claude Code can orchestrate for IT troubleshooting, including service detection, OS fingerprinting, and script scanning capabilities.
+# Details:
+This task involves developing adaptable network analysis functions as Python modules that Claude Code can combine and customize:
+1. Create modular Python functions for network diagnostics
+2. Implement service version detection as a standalone module
+3. Add OS fingerprinting capabilities as a separate module
+4. Implement script scanning as an independent diagnostic tool
+5. Design an API interface for Claude Code to orchestrate these tools
+
+Files to modify:
+- src/diagnostics/network_discovery.py
+- src/diagnostics/service_detection.py
+- src/diagnostics/os_fingerprinting.py
+- src/diagnostics/script_scanning.py
+- src/diagnostics/diagnostic_api.py
+
+Implementation example:
+```python
+import nmap
+
+# Modular function for basic port scanning
+def scan_ports(target, ports='1-1000'):
+    scanner = nmap.PortScanner()
+    scanner.scan(target, ports, '-v')
+    return scanner.all_hosts()
+
+# Modular function for OS detection
+def detect_os(target):
+    scanner = nmap.PortScanner()
+    scanner.scan(target, arguments='-O')
+    if target in scanner.all_hosts():
+        if 'osmatch' in scanner[target]:
+            return scanner[target]['osmatch']
+    return []
+
+# Modular function for service detection
+def detect_services(target, ports='1-1000'):
+    scanner = nmap.PortScanner()
+    scanner.scan(target, ports, '-sV')
+    services = {}
+    if target in scanner.all_hosts():
+        for proto in scanner[target].all_protocols():
+            for port in scanner[target][proto].keys():
+                services[port] = scanner[target][proto][port]
+    return services
+
+# API for Claude Code to orchestrate diagnostics
+class NetworkDiagnosticAPI:
+    @staticmethod
+    def run_diagnostic(target, diagnostic_type, **kwargs):
+        if diagnostic_type == 'port_scan':
+            return scan_ports(target, kwargs.get('ports', '1-1000'))
+        elif diagnostic_type == 'os_detection':
+            return detect_os(target)
+        elif diagnostic_type == 'service_detection':
+            return detect_services(target, kwargs.get('ports', '1-1000'))
+        # Additional diagnostic types can be added here
+```
+
+# Test Strategy:
+1. Test each diagnostic module independently with known network configurations
+2. Validate OS detection accuracy against reference systems
+3. Test service detection against servers with known services
+4. Verify that Claude Code can successfully orchestrate different diagnostic tools
+5. Test the API interface with various combinations of diagnostic parameters
+6. Measure performance and resource usage of individual diagnostic modules
+
+# Subtasks:
+## 1. Integrate python-nmap and implement basic scanning [pending]
+### Dependencies: None
+### Description: Set up the NetworkScanner class with python-nmap integration and implement basic port scanning functionality.
+### Details:
+Create the NetworkScanner class that initializes the nmap.PortScanner object. Implement methods for basic port scanning that will serve as the foundation for more advanced scanning features. Include methods to scan specific targets with configurable port ranges and return basic scan results.
+
+## 2. Implement service version detection [pending]
+### Dependencies: 3.1
+### Description: Create a modular service detection function that Claude Code can invoke for identifying services running on network devices.
+### Details:
+Develop a standalone service_detection.py module with functions that enable service version detection using nmap's version detection capabilities (-sV flag). Create methods to extract and format service information including name, version, and other relevant details. Ensure the module can be called independently or as part of a larger diagnostic workflow orchestrated by Claude Code.
+
+## 3. Add OS fingerprinting capabilities [pending]
+### Dependencies: 3.1
+### Description: Create a modular OS fingerprinting function that Claude Code can invoke to identify operating systems on network devices.
+### Details:
+Develop a standalone os_fingerprinting.py module with functions for OS detection using nmap's OS detection feature (-O flag). Create methods to extract and return OS information including OS name, version, accuracy, and other relevant details. Ensure the module can be called independently or as part of a larger diagnostic workflow orchestrated by Claude Code.
+
+## 4. Implement script scanning for service analysis [pending]
+### Dependencies: 3.2
+### Description: Create a modular script scanning function that Claude Code can invoke for deeper analysis of network services.
+### Details:
+Develop a standalone script_scanning.py module with functions that support nmap's scripting engine (--script flags). Implement methods to run specific categories of scripts (e.g., default, safe, vuln) or individual scripts. Create functions to parse and present script scan results in a structured format. Ensure the module can be called independently or as part of a larger diagnostic workflow orchestrated by Claude Code.
+
+## 5. Create a diagnostic API for Claude Code orchestration [pending]
+### Dependencies: 3.1, 3.2, 3.3, 3.4
+### Description: Implement an API interface that allows Claude Code to orchestrate and combine different network diagnostic tools.
+### Details:
+Develop a diagnostic_api.py module that provides a unified interface for Claude Code to access all network diagnostic functions. Implement a NetworkDiagnosticAPI class with methods to run individual diagnostics or combinations of diagnostics. Create helper functions to format and combine results from different diagnostic tools. Include documentation and examples of how Claude Code can use the API for different IT troubleshooting scenarios.
+

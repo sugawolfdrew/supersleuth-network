@@ -12,10 +12,18 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 from pathlib import Path
+import psutil
+import netifaces
 
 from ..diagnostics.performance_analysis import PerformanceAnalysis
 from ..diagnostics.network_discovery import NetworkDiscovery
 from ..utils.logger import get_logger
+from .network_metrics import (
+    get_interface_io_stats, 
+    calculate_bandwidth_usage,
+    get_interface_error_rates,
+    get_network_utilization_summary
+)
 
 
 class AlertSeverity(Enum):
@@ -192,6 +200,10 @@ class NetworkMonitor:
         self.monitor_thread = None
         self.last_known_devices = set()
         
+        # Initialize counters for rate calculations
+        self._last_net_io = psutil.net_io_counters()
+        self._last_disk_io = psutil.disk_io_counters()
+        
     def start(self):
         """Start continuous monitoring"""
         
@@ -255,30 +267,69 @@ class NetworkMonitor:
         """Collect network performance metrics"""
         
         try:
-            # Quick performance check
-            perf_config = {
-                'test_duration': 10,  # Quick test
-                'test_interval': 2
-            }
+            import subprocess
+            import re
+            import platform
             
-            # In production, would use actual performance analysis
-            # For demo, simulate metrics
-            import random
+            # Ping test for latency and packet loss
+            host = "8.8.8.8"  # Google DNS for reliable testing
+            count = 5
             
-            # Simulate bandwidth
-            bandwidth = 80 + random.randint(-20, 20)
-            self.metric_collector.add_metric('bandwidth', bandwidth)
+            if platform.system() == "Darwin":  # macOS
+                cmd = ['ping', '-c', str(count), host]
+            else:
+                cmd = ['ping', '-c', str(count), host]
             
-            # Simulate latency
-            latency = 30 + random.randint(-10, 20)
-            self.metric_collector.add_metric('latency', latency)
+            result = subprocess.run(cmd, capture_output=True, text=True)
             
-            # Simulate packet loss
-            packet_loss = random.uniform(0, 0.5)
-            self.metric_collector.add_metric('packet_loss', packet_loss)
+            if result.returncode == 0:
+                output = result.stdout
+                
+                # Parse latency
+                latency_match = re.search(r'min/avg/max/[a-z]* = ([\d.]+)/([\d.]+)/([\d.]+)', output)
+                if latency_match:
+                    avg_latency = float(latency_match.group(2))
+                    self.metric_collector.add_metric('latency', avg_latency)
+                
+                # Parse packet loss
+                loss_match = re.search(r'(\d+\.?\d*)% packet loss', output)
+                if loss_match:
+                    packet_loss = float(loss_match.group(1))
+                    self.metric_collector.add_metric('packet_loss', packet_loss)
+            
+            # Network bandwidth (simplified - measures network interface throughput)
+            self._collect_network_bandwidth()
             
         except Exception as e:
             self.logger.error(f"Failed to collect performance metrics: {str(e)}")
+    
+    def _collect_network_bandwidth(self):
+        """Collect network bandwidth usage"""
+        try:
+            # Get network I/O stats
+            net_io = psutil.net_io_counters()
+            
+            if hasattr(self, '_last_net_io'):
+                # Calculate bandwidth in Mbps
+                time_delta = self.check_interval
+                bytes_sent_delta = net_io.bytes_sent - self._last_net_io.bytes_sent
+                bytes_recv_delta = net_io.bytes_recv - self._last_net_io.bytes_recv
+                
+                # Convert to Mbps
+                upload_mbps = (bytes_sent_delta * 8) / (time_delta * 1_000_000)
+                download_mbps = (bytes_recv_delta * 8) / (time_delta * 1_000_000)
+                
+                # Total bandwidth
+                total_bandwidth = upload_mbps + download_mbps
+                
+                self.metric_collector.add_metric('bandwidth', total_bandwidth)
+                self.metric_collector.add_metric('bandwidth_upload', upload_mbps)
+                self.metric_collector.add_metric('bandwidth_download', download_mbps)
+            
+            self._last_net_io = net_io
+            
+        except Exception as e:
+            self.logger.error(f"Failed to collect network bandwidth: {str(e)}")
     
     def _collect_system_metrics(self):
         """Collect system resource metrics"""
@@ -286,13 +337,32 @@ class NetworkMonitor:
         try:
             import psutil
             
-            # CPU usage
+            # CPU usage (per core and total)
             cpu_percent = psutil.cpu_percent(interval=1)
             self.metric_collector.add_metric('cpu_usage', cpu_percent)
+            
+            # Detailed CPU metrics
+            cpu_per_core = psutil.cpu_percent(interval=1, percpu=True)
+            cpu_freq = psutil.cpu_freq()
             
             # Memory usage
             memory = psutil.virtual_memory()
             self.metric_collector.add_metric('memory_usage', memory.percent)
+            self.metric_collector.add_metric('memory_available_gb', memory.available / (1024**3))
+            
+            # Disk usage
+            disk = psutil.disk_usage('/')
+            self.metric_collector.add_metric('disk_usage', disk.percent)
+            
+            # Disk I/O
+            disk_io = psutil.disk_io_counters()
+            if hasattr(self, '_last_disk_io'):
+                # Calculate rates
+                read_rate = (disk_io.read_bytes - self._last_disk_io.read_bytes) / self.check_interval / (1024**2)  # MB/s
+                write_rate = (disk_io.write_bytes - self._last_disk_io.write_bytes) / self.check_interval / (1024**2)  # MB/s
+                self.metric_collector.add_metric('disk_read_rate', max(0, read_rate))
+                self.metric_collector.add_metric('disk_write_rate', max(0, write_rate))
+            self._last_disk_io = disk_io
             
         except Exception as e:
             self.logger.error(f"Failed to collect system metrics: {str(e)}")
@@ -301,17 +371,44 @@ class NetworkMonitor:
         """Monitor for device changes on network"""
         
         try:
-            # In production, would use NetworkDiscovery
-            # For demo, simulate device count
-            import random
+            import subprocess
+            import platform
             
-            device_count = 25 + random.randint(-5, 5)
-            self.metric_collector.add_metric('device_count', device_count)
+            # Count network connections
+            try:
+                connections = psutil.net_connections(kind='inet')
+                unique_ips = set()
+                
+                for conn in connections:
+                    if conn.status == 'ESTABLISHED' and conn.raddr:
+                        unique_ips.add(conn.raddr.ip)
+                
+                device_count = len(unique_ips)
+                self.metric_collector.add_metric('device_count', device_count)
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                # Fallback to counting network interfaces if we can't access connections
+                net_if_addrs = psutil.net_if_addrs()
+                device_count = len([iface for iface in net_if_addrs if net_if_addrs[iface]])
+                self.metric_collector.add_metric('device_count', device_count)
+            
+            # ARP table check for local network devices (macOS/Linux)
+            if platform.system() in ['Darwin', 'Linux']:
+                try:
+                    arp_result = subprocess.run(['arp', '-a'], capture_output=True, text=True)
+                    if arp_result.returncode == 0:
+                        # Count unique MAC addresses
+                        import re
+                        mac_pattern = r'([0-9a-fA-F]{1,2}[:-]){5}[0-9a-fA-F]{1,2}'
+                        macs = re.findall(mac_pattern, arp_result.stdout)
+                        local_devices = len(set(macs))
+                        self.metric_collector.add_metric('local_devices', local_devices)
+                except:
+                    pass
             
             # Check for significant changes
             stats = self.metric_collector.get_metric_stats('device_count', minutes=10)
             
-            if stats and 'average' in stats:
+            if stats and 'average' in stats and stats['average'] > 0:
                 change_percent = abs(stats['current'] - stats['average']) / stats['average'] * 100
                 
                 if change_percent > self.thresholds['device_count_change_percent']:
@@ -441,3 +538,98 @@ class NetworkMonitor:
             for m in self.metric_collector.metrics_history[metric_type]
             if m['timestamp'] > cutoff_time
         ]
+    
+    def get_network_metrics(self, interface: str = None) -> Dict[str, Any]:
+        """Get comprehensive network interface metrics
+        
+        This is a modular function that can be called independently by Claude Code
+        for network diagnostics.
+        
+        Args:
+            interface: Specific interface name, or None for all interfaces
+            
+        Returns:
+            Dict containing network metrics for the specified interface(s)
+        """
+        try:
+            if interface:
+                # Get metrics for specific interface
+                io_stats = get_interface_io_stats(interface)
+                error_rates = get_interface_error_rates(interface)
+                bandwidth = calculate_bandwidth_usage(interval=1.0, interface=interface)
+                
+                return {
+                    'interface': interface,
+                    'io_stats': io_stats.get(interface, {}),
+                    'error_rates': error_rates.get(interface, {}),
+                    'bandwidth': bandwidth.get(interface, {}),
+                    'timestamp': datetime.now().isoformat()
+                }
+            else:
+                # Get comprehensive network summary
+                return get_network_utilization_summary()
+                
+        except Exception as e:
+            self.logger.error(f"Failed to get network metrics: {str(e)}")
+            return {}
+    
+    def get_real_time_system_metrics(self) -> Dict[str, Any]:
+        """Get real-time system metrics for dashboard"""
+        try:
+            # CPU metrics
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            cpu_freq = psutil.cpu_freq()
+            
+            # Memory metrics
+            memory = psutil.virtual_memory()
+            swap = psutil.swap_memory()
+            
+            # Disk metrics
+            disk = psutil.disk_usage('/')
+            
+            # Network interfaces
+            net_if_stats = psutil.net_if_stats()
+            active_interfaces = sum(1 for iface, stats in net_if_stats.items() if stats.isup)
+            
+            # Process count
+            process_count = len(psutil.pids())
+            
+            # Boot time
+            boot_time = datetime.fromtimestamp(psutil.boot_time())
+            uptime = datetime.now() - boot_time
+            
+            return {
+                'cpu': {
+                    'percent': cpu_percent,
+                    'frequency_current': cpu_freq.current if cpu_freq else 0,
+                    'frequency_max': cpu_freq.max if cpu_freq else 0,
+                    'cores_logical': psutil.cpu_count(logical=True),
+                    'cores_physical': psutil.cpu_count(logical=False)
+                },
+                'memory': {
+                    'percent': memory.percent,
+                    'used_gb': memory.used / (1024**3),
+                    'available_gb': memory.available / (1024**3),
+                    'total_gb': memory.total / (1024**3),
+                    'swap_percent': swap.percent
+                },
+                'disk': {
+                    'percent': disk.percent,
+                    'used_gb': disk.used / (1024**3),
+                    'free_gb': disk.free / (1024**3),
+                    'total_gb': disk.total / (1024**3)
+                },
+                'network': {
+                    'interfaces_active': active_interfaces,
+                    'interfaces_total': len(net_if_stats)
+                },
+                'system': {
+                    'process_count': process_count,
+                    'uptime_hours': uptime.total_seconds() / 3600,
+                    'boot_time': boot_time.isoformat()
+                },
+                'timestamp': datetime.now().isoformat()
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get real-time metrics: {str(e)}")
+            return {}

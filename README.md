@@ -1,10 +1,28 @@
-# SuperSleuth Network
+# SuperSleuth Network - A Claude Code Diagnostic Toolkit
 
-Enterprise-grade WiFi and network diagnostic tool designed for IT professionals working in client environments.
+**A collaborative network diagnostic toolkit designed for IT professionals using Claude Code in VSCode**
 
-## Overview
+## 🎯 What This Is (And Isn't)
 
-SuperSleuth Network transforms VSCode into an intelligent diagnostic workspace through custom tool creation, providing real-time expert guidance and generating bespoke diagnostic workflows tailored to each unique network situation.
+SuperSleuth Network is **NOT** a standalone application. It's a **diagnostic toolkit** that becomes powerful when used with Claude Code as your AI co-pilot.
+
+Think of it as:
+- 🧰 A toolbox of network diagnostic scripts
+- 🤖 Designed for Claude Code to orchestrate and customize
+- 👥 A collaborative workspace where human IT professionals and AI work together
+- 🔧 Tools that adapt on-the-fly to specific network problems
+
+## How It Works
+
+```
+You (IT Professional): "I'm seeing intermittent WiFi drops in the conference room"
+Claude Code: "Let me help diagnose that. I'll use the network_discovery tool, 
+             but modify it to focus on signal strength fluctuations..."
+             *creates custom diagnostic*
+             "I see drops every 15 minutes. Let's create an interference scanner..."
+```
+
+**You describe the problem. Claude Code adapts the tools. Together, you solve it.**
 
 ## Key Features
 
@@ -65,51 +83,75 @@ brew install nmap iperf3
 choco install nmap iperf3
 ```
 
-## Usage
+## Usage - The Claude Code Way
 
-### Quick Start
+### Prerequisites for the Best Experience
 
-#### Launch the Web Dashboard
-```bash
-python3 dashboard_launcher.py
-# Open browser to http://127.0.0.1:5000
+1. **Install Claude Code** in VSCode
+2. **Clone this repository** and open in VSCode
+3. **Describe your network issue** to Claude Code
+
+### Example Collaborative Sessions
+
+#### Session 1: WiFi Performance Issues
+```
+You: "Users in the east wing are complaining about slow WiFi"
+
+Claude Code: "I'll help diagnose that. Let me start with a signal strength 
+             analysis focused on the east wing. First, I'll run the WiFi 
+             scanner with modifications..."
+             
+*Claude modifies src/diagnostics/wifi_analyzer.py for your specific layout*
+*Runs the diagnostic and interprets results*
+
+Claude Code: "I found weak signal strength in rooms 201-205. The access point 
+             in that area might be underpowered. Let me create a channel 
+             interference test..."
 ```
 
-#### View Real-Time Events
-```bash
-python3 event_viewer.py -f              # Follow all events
-python3 event_viewer.py -f -m table     # Table view
-python3 event_viewer.py -f -s error     # Errors only
+#### Session 2: Security Concerns
+```
+You: "I think we might have unauthorized devices on our network"
+
+Claude Code: "Let's investigate. I'll use the network discovery tool but 
+             enhance it to flag suspicious devices. I'll also create a 
+             MAC address validator against your known device list..."
+             
+*Claude creates a custom security scanner based on your environment*
 ```
 
-#### Run Diagnostics
+### Toolkit Components
+
+The toolkit includes base diagnostic modules that Claude Code can use and modify:
+
+- **Network Discovery** (`src/diagnostics/network_discovery.py`) - Device scanning and identification
+- **WiFi Analysis** (`src/diagnostics/wifi_analyzer.py`) - Signal strength and channel analysis  
+- **Performance Testing** (`src/diagnostics/performance_analysis.py`) - Bandwidth and latency tests
+- **Security Assessment** (`src/diagnostics/security_assessment.py`) - Vulnerability scanning
+- **Monitoring** (`src/core/monitoring.py`) - Real-time network monitoring
+
+### Working with Claude Code
+
+1. **Open this project in VSCode**
+2. **Start Claude Code** 
+3. **Describe your network problem** in natural language
+4. **Let Claude Code suggest and modify tools** for your specific situation
+5. **Review and run the customized diagnostics**
+6. **Collaborate on interpreting results** and next steps
+
+### Standalone Usage (Without Claude Code)
+
+While designed for Claude Code collaboration, you can run tools directly:
+
 ```bash
-python3 examples/enterprise_diagnostic_demo.py
-```
+# Run network discovery
+python3 -m src.diagnostics.network_discovery
 
-### Interactive Log Viewer
-```bash
-./view_logs.sh  # Interactive menu for log viewing
-```
+# Launch monitoring dashboard  
+python3 -m src.interfaces.web_dashboard
 
-### Python API Usage
-
-```python
-from src.core.supersleuth import SuperSleuthNetwork
-
-# Configure client settings
-client_config = {
-    'client_name': 'Acme Corporation',
-    'sow_reference': 'SOW-2024-001',
-    'authorized_subnets': ['192.168.1.0/24'],
-    'compliance_requirements': ['SOC2', 'ISO27001'],
-    'escalation_contacts': ['it@acme.com']
-}
-
-# Initialize and run diagnostics
-supersleuth = SuperSleuthNetwork(client_config)
-supersleuth.start_diagnostic_session("Network performance issues")
-results = supersleuth.run_diagnostic('network_discovery')
+# View event logs
+python3 event_viewer.py -f
 ```
 
 ## Development

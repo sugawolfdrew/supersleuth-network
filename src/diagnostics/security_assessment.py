@@ -62,7 +62,7 @@ class SecurityAssessment(BaseDiagnostic):
         }
     
     def _run_diagnostic(self, result: DiagnosticResult):
-        """Execute security assessment diagnostic"
+        """Execute security assessment diagnostic"""
         
         try:
             self.logger.info(f"Starting security assessment for compliance: {', '.join(self.compliance_frameworks)}")
@@ -246,41 +246,102 @@ class SecurityAssessment(BaseDiagnostic):
     def _scan_vulnerabilities(self) -> Optional[Dict[str, Any]]:
         """Perform vulnerability scanning"""
         
-        if not self.available_tools.get('nmap'):
-            self.logger.warning("Nmap not available - skipping vulnerability scan")
-            return {
-                'scan_performed': False,
-                'reason': 'Required tools not available'
-            }
-        
         self.logger.info("Scanning for vulnerabilities...")
         
-        vulnerabilities = {
-            'scan_performed': True,
-            'scan_depth': self.scan_depth,
-            'cve_vulnerabilities': [],
-            'misconfigurations': [],
-            'outdated_services': [],
-            'security_issues': []
-        }
-        
-        # Perform service version detection
+        # Import our new security scanner module
         try:
-            # Limited scan on local network only
-            cmd = ['nmap', '-sV', '--version-intensity', '5', '-p-', 'localhost']
+            from . import security_scanner
+            from . import cve_database
             
-            if self.scan_depth == 'deep':
-                cmd.extend(['--script', 'vuln'])
+            # Get target from config or use localhost
+            target = self.config.get('target', '127.0.0.1')
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            # Perform security scan using our modular scanner
+            scan_type = 'full' if self.scan_depth == 'deep' else 'basic'
+            scan_results = security_scanner.perform_security_scan(target, scan_type)
             
-            if result.returncode == 0:
-                vulnerabilities.update(self._parse_nmap_vulnerabilities(result.stdout))
+            vulnerabilities = {
+                'scan_performed': True,
+                'scan_depth': self.scan_depth,
+                'scan_target': target,
+                'open_ports': scan_results.get('port_scan', []),
+                'services': scan_results.get('services', []),
+                'cve_vulnerabilities': [],
+                'misconfigurations': [],
+                'outdated_services': [],
+                'security_issues': scan_results.get('vulnerabilities', [])
+            }
             
-        except subprocess.TimeoutExpired:
-            self.logger.warning("Vulnerability scan timed out")
+            # Check for CVEs based on detected services
+            if scan_results.get('services'):
+                for service in scan_results['services']:
+                    if service.get('service') and service.get('version'):
+                        # Look up CVEs for this service
+                        cves = cve_database.search_cves_by_service(
+                            service['service'], 
+                            service.get('version')
+                        )
+                        
+                        for cve in cves[:5]:  # Top 5 CVEs
+                            vulnerabilities['cve_vulnerabilities'].append({
+                                'port': service['port'],
+                                'service': service['service'],
+                                'version': service.get('version'),
+                                'cve_id': cve['cve_id'],
+                                'severity': cve.get('severity', 'UNKNOWN'),
+                                'cvss_score': cve.get('cvss_v3_score', cve.get('cvss_v2_score')),
+                                'description': cve.get('description')
+                            })
+                            
+                            # Add to security issues
+                            vulnerabilities['security_issues'].append({
+                                'type': 'cve_vulnerability',
+                                'severity': cve.get('severity', 'MEDIUM'),
+                                'port': service['port'],
+                                'service': service['service'],
+                                'cve_id': cve['cve_id'],
+                                'message': f"{cve['cve_id']}: {cve.get('description', 'Known vulnerability')}"
+                            })
+            
+            # Add SSL certificate issues
+            for ssl_check in scan_results.get('ssl_checks', []):
+                if ssl_check.get('issues'):
+                    vulnerabilities['misconfigurations'].append({
+                        'type': 'ssl_configuration',
+                        'host': ssl_check['host'],
+                        'port': ssl_check['port'],
+                        'issues': ssl_check['issues']
+                    })
+            
+            # If nmap is available, enhance with additional scanning
+            if self.available_tools.get('nmap') and self.scan_depth == 'deep':
+                try:
+                    cmd = ['nmap', '-sV', '--script', 'vuln', '-p-', target]
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                    
+                    if result.returncode == 0:
+                        nmap_vulns = self._parse_nmap_vulnerabilities(result.stdout)
+                        # Merge nmap findings
+                        if 'cve_found' in nmap_vulns:
+                            vulnerabilities['cve_vulnerabilities'].extend(nmap_vulns['cve_found'])
+                            
+                except subprocess.TimeoutExpired:
+                    self.logger.warning("Extended nmap scan timed out")
+                except Exception as e:
+                    self.logger.error(f"Extended scan error: {str(e)}")
+                    
+        except ImportError as e:
+            self.logger.error(f"Failed to import security scanner modules: {str(e)}")
+            return {
+                'scan_performed': False,
+                'reason': 'Security scanner modules not available'
+            }
         except Exception as e:
             self.logger.error(f"Vulnerability scan error: {str(e)}")
+            return {
+                'scan_performed': False,
+                'reason': str(e)
+            }
         
         return vulnerabilities
     
@@ -332,12 +393,115 @@ class SecurityAssessment(BaseDiagnostic):
             '00:50:56',  # VMware
             '08:00:27',  # VirtualBox
             '00:16:3E',  # Xen
+            '00:1C:14',  # VMware
+            '00:05:69',  # VMware
+            '00:03:FF',  # Microsoft Virtual PC
+            '00:15:5D',  # Hyper-V
+            '52:54:00',  # QEMU/KVM
         ]
         
-        # This would integrate with network discovery
-        # For now, return placeholder
+        # Perform basic rogue device detection using ARP
+        try:
+            # Get ARP table
+            system = platform.system()
+            if system == "Windows":
+                cmd = ['arp', '-a']
+            else:
+                cmd = ['arp', '-n']
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0:
+                # Parse ARP entries
+                lines = result.stdout.strip().split('\n')
+                for line in lines:
+                    # Extract MAC address from line
+                    mac_match = re.search(r'([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})', line)
+                    if mac_match:
+                        mac_address = mac_match.group(0).upper()
+                        
+                        # Check if MAC prefix is suspicious
+                        for prefix in suspicious_mac_prefixes:
+                            if mac_address.startswith(prefix.upper().replace(':', '-')):
+                                # Extract IP address
+                                ip_match = re.search(r'\d+\.\d+\.\d+\.\d+', line)
+                                if ip_match:
+                                    rogue_detection['suspicious_devices'].append({
+                                        'mac_address': mac_address,
+                                        'ip_address': ip_match.group(0),
+                                        'type': 'virtual_machine',
+                                        'vendor': self._get_vm_vendor(prefix),
+                                        'risk': 'medium',
+                                        'recommendation': 'Verify if virtual machines are authorized on this network'
+                                    })
+                
+                # Check for duplicate IPs (ARP spoofing indicator)
+                ip_to_macs = {}
+                for line in lines:
+                    ip_match = re.search(r'(\d+\.\d+\.\d+\.\d+)', line)
+                    mac_match = re.search(r'([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})', line)
+                    
+                    if ip_match and mac_match:
+                        ip = ip_match.group(1)
+                        mac = mac_match.group(0)
+                        
+                        if ip not in ip_to_macs:
+                            ip_to_macs[ip] = []
+                        ip_to_macs[ip].append(mac)
+                
+                # Check for IPs with multiple MACs
+                for ip, macs in ip_to_macs.items():
+                    if len(set(macs)) > 1:
+                        rogue_detection['spoofing_indicators'].append({
+                            'type': 'arp_spoofing',
+                            'ip_address': ip,
+                            'mac_addresses': list(set(macs)),
+                            'risk': 'high',
+                            'recommendation': 'Investigate potential ARP spoofing attack'
+                        })
+            
+        except subprocess.TimeoutExpired:
+            self.logger.warning("ARP scan timed out")
+        except Exception as e:
+            self.logger.error(f"Error during rogue device detection: {str(e)}")
+        
+        # Check for unauthorized services on common ports
+        unauthorized_ports = [
+            (22, 'SSH'),
+            (23, 'Telnet'),
+            (3389, 'RDP'),
+            (5900, 'VNC'),
+            (5800, 'VNC-HTTP'),
+            (445, 'SMB'),
+            (139, 'NetBIOS')
+        ]
+        
+        for port, service in unauthorized_ports:
+            if self._is_port_open('0.0.0.0', port):
+                rogue_detection['unauthorized_services'].append({
+                    'port': port,
+                    'service': service,
+                    'status': 'open',
+                    'risk': 'high' if port in [23, 445, 139] else 'medium',
+                    'recommendation': f'Review if {service} service on port {port} is authorized'
+                })
         
         return rogue_detection
+    
+    def _get_vm_vendor(self, mac_prefix: str) -> str:
+        """Get VM vendor from MAC prefix"""
+        vm_vendors = {
+            '00:0C:29': 'VMware',
+            '00:50:56': 'VMware',
+            '08:00:27': 'VirtualBox',
+            '00:16:3E': 'Xen',
+            '00:1C:14': 'VMware',
+            '00:05:69': 'VMware',
+            '00:03:FF': 'Microsoft Virtual PC',
+            '00:15:5D': 'Hyper-V',
+            '52:54:00': 'QEMU/KVM'
+        }
+        return vm_vendors.get(mac_prefix, 'Unknown VM')
     
     def _validate_compliance(self, network_security: Dict[str, Any],
                            wifi_security: Dict[str, Any],

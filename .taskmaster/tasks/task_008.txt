@@ -1,0 +1,101 @@
+# Task ID: 8
+# Title: Implement Time-Series Database and Data Management
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Implement proper metrics storage with time-series database integration, data retention policies, baseline engine, and anomaly detection.
+# Details:
+This task involves implementing comprehensive data management:
+
+1. Time-Series Database Integration:
+   - Integrate with InfluxDB or TimescaleDB
+   - Implement efficient data ingestion
+   - Add query optimization
+
+2. Data Retention Policies:
+   - Create configurable retention periods
+   - Implement data aggregation/downsampling
+   - Add compliance-aware archival
+
+3. Baseline Engine:
+   - Implement automatic baseline calculation
+   - Add deviation detection
+   - Create seasonal adjustment
+
+4. Anomaly Detection:
+   - Implement statistical anomaly detection
+   - Add machine learning models
+   - Create real-time alerting
+
+Files to create:
+- src/core/timeseries_db.py
+- src/core/data_retention.py
+- src/analytics/baseline_engine.py
+- src/analytics/anomaly_detection.py
+
+Implementation example for time-series database:
+```python
+from influxdb import InfluxDBClient
+import datetime
+
+class TimeSeriesDB:
+    def __init__(self, host='localhost', port=8086, username='admin', password='admin', database='metrics'):
+        self.client = InfluxDBClient(host, port, username, password, database)
+        self.database = database
+        self._ensure_database()
+    
+    def _ensure_database(self):
+        # Create database if it doesn't exist
+        dbs = self.client.get_list_database()
+        if {'name': self.database} not in dbs:
+            self.client.create_database(self.database)
+    
+    def write_metric(self, measurement, tags, fields, timestamp=None):
+        if timestamp is None:
+            timestamp = datetime.datetime.utcnow()
+            
+        point = {
+            "measurement": measurement,
+            "tags": tags,
+            "time": timestamp.isoformat(),
+            "fields": fields
+        }
+        
+        return self.client.write_points([point])
+    
+    def query_metrics(self, measurement, tags=None, start_time=None, end_time=None, limit=100):
+        query = f"SELECT * FROM {measurement}"
+        
+        # Add tag filters
+        if tags:
+            conditions = [f"{k}='{v}'" for k, v in tags.items()]
+            query += f" WHERE {' AND '.join(conditions)}"
+        
+        # Add time range
+        if start_time:
+            time_clause = f"time >= '{start_time.isoformat()}'"
+            if 'WHERE' in query:
+                query += f" AND {time_clause}"
+            else:
+                query += f" WHERE {time_clause}"
+                
+        if end_time:
+            time_clause = f"time <= '{end_time.isoformat()}'"
+            if 'WHERE' in query:
+                query += f" AND {time_clause}"
+            else:
+                query += f" WHERE {time_clause}"
+        
+        # Add limit
+        query += f" LIMIT {limit}"
+        
+        return self.client.query(query)
+```
+
+# Test Strategy:
+1. Load testing with millions of metrics
+2. Validate data retention policy enforcement
+3. Test baseline calculation accuracy
+4. Verify anomaly detection with known anomalies
+5. Performance testing for query response times
+6. Test data migration and archival processes

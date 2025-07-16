@@ -1,0 +1,103 @@
+# Task ID: 9
+# Title: Implement Real Performance Testing
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Integrate iPerf3 for bandwidth testing, implement traffic generation capabilities, QoS testing, and custom test endpoints.
+# Details:
+This task involves implementing real performance testing capabilities:
+
+1. iPerf3 Integration:
+   - Create iPerf3 client/server management
+   - Implement multi-stream testing
+   - Add bidirectional tests
+
+2. Traffic Generation:
+   - Implement various traffic patterns
+   - Add protocol-specific generators
+   - Create load testing capabilities
+
+3. QoS Testing:
+   - Implement DSCP marking validation
+   - Add traffic class testing
+   - Create shaping detection
+
+4. Custom Test Endpoints:
+   - Create test endpoint registry
+   - Implement health check system
+   - Add geographic distribution support
+
+Files to modify/create:
+- src/diagnostics/performance_analysis.py
+- src/testing/traffic_generator.py (new)
+
+Implementation example for iPerf3 integration:
+```python
+import subprocess
+import json
+import tempfile
+
+class IPerf3Client:
+    def __init__(self, binary_path='iperf3'):
+        self.binary_path = binary_path
+    
+    def run_test(self, server, port=5201, duration=10, parallel=1, reverse=False, udp=False, bandwidth=None):
+        # Build command
+        cmd = [self.binary_path, '-c', server, '-p', str(port), '-t', str(duration), '-J']
+        
+        if parallel > 1:
+            cmd.extend(['-P', str(parallel)])
+        
+        if reverse:
+            cmd.append('-R')
+        
+        if udp:
+            cmd.append('-u')
+            if bandwidth:
+                cmd.extend(['-b', str(bandwidth)])
+        
+        # Run iperf3 test
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            return json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            if e.stdout:
+                try:
+                    return json.loads(e.stdout)
+                except json.JSONDecodeError:
+                    pass
+            raise RuntimeError(f"iPerf3 test failed: {e}")
+        except json.JSONDecodeError:
+            raise RuntimeError("Failed to parse iPerf3 output")
+    
+    def analyze_results(self, results):
+        if 'error' in results:
+            return {
+                'status': 'error',
+                'message': results['error']
+            }
+        
+        # Extract key metrics
+        end_info = results.get('end', {})
+        
+        return {
+            'status': 'success',
+            'protocol': 'UDP' if results.get('udp') else 'TCP',
+            'sent_bytes': end_info.get('bytes_sent', 0),
+            'received_bytes': end_info.get('bytes_received', 0),
+            'bitrate_sender': end_info.get('sender', {}).get('bits_per_second', 0),
+            'bitrate_receiver': end_info.get('receiver', {}).get('bits_per_second', 0),
+            'jitter_ms': end_info.get('sum', {}).get('jitter_ms', 0) if results.get('udp') else None,
+            'lost_packets': end_info.get('sum', {}).get('lost_packets', 0) if results.get('udp') else None,
+            'lost_percent': end_info.get('sum', {}).get('lost_percent', 0) if results.get('udp') else None,
+            'retransmits': end_info.get('sender', {}).get('retransmits', 0) if not results.get('udp') else None
+        }
+```
+
+# Test Strategy:
+1. Benchmark against known network links
+2. Validate traffic generation patterns
+3. Test QoS detection with configured network equipment
+4. Verify multi-site testing capabilities
+5. Performance testing for concurrent tests
+6. Validate test results against reference measurements

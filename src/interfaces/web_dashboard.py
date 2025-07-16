@@ -85,6 +85,12 @@ class DashboardServer:
         @self.app.route('/api/metrics')
         def get_metrics():
             """Get real-time metrics"""
+            # Include detailed system metrics if monitoring is active
+            if self.monitoring_active and hasattr(self, 'network_monitor'):
+                system_metrics = self.network_monitor.get_real_time_system_metrics()
+                self.real_time_metrics.update({
+                    'system_details': system_metrics
+                })
             return jsonify(self.real_time_metrics)
         
         @self.app.route('/api/diagnostics/history')
@@ -293,15 +299,35 @@ class DashboardServer:
     def _monitoring_loop(self):
         """Background monitoring loop"""
         
+        # Import monitoring module
+        from ..core.monitoring import NetworkMonitor, MetricCollector
+        
+        # Create monitor instance if not exists
+        if not hasattr(self, 'network_monitor'):
+            # Use a basic config for monitoring
+            monitor_config = {
+                'client_name': 'Dashboard Monitor',
+                'monitoring_interval': 5
+            }
+            self.network_monitor = NetworkMonitor(monitor_config, check_interval=5)
+            self.network_monitor.start()
+        
         while self.monitoring_active:
             try:
-                # Update real-time metrics (simulated for demo)
+                # Get real system metrics
+                system_metrics = self.network_monitor.get_real_time_system_metrics()
+                current_metrics = self.network_monitor.get_current_metrics()
+                
+                # Update real-time metrics with actual data
                 self.real_time_metrics.update({
-                    'network_health': min(100, self.real_time_metrics['network_health'] + 
-                                         (5 if self.real_time_metrics['network_health'] < 80 else -2)),
-                    'active_devices': 25 + int(time.time() % 10),
-                    'bandwidth_usage': 30 + int(time.time() % 40),
-                    'security_score': 85 + int(time.time() % 10),
+                    'network_health': self._calculate_network_health(current_metrics),
+                    'active_devices': int(current_metrics.get('device_count', {}).get('current', 0)),
+                    'bandwidth_usage': int(current_metrics.get('bandwidth', {}).get('current', 0)),
+                    'security_score': 100 - int(current_metrics.get('risk_score', {}).get('current', 15)),
+                    'cpu_usage': system_metrics.get('cpu', {}).get('percent', 0),
+                    'memory_usage': system_metrics.get('memory', {}).get('percent', 0),
+                    'disk_usage': system_metrics.get('disk', {}).get('percent', 0),
+                    'uptime_hours': system_metrics.get('system', {}).get('uptime_hours', 0),
                     'last_update': datetime.now().isoformat()
                 })
                 
@@ -310,6 +336,24 @@ class DashboardServer:
             except Exception as e:
                 self.logger.error(f"Monitoring error: {str(e)}")
                 time.sleep(5)
+    
+    def _calculate_network_health(self, metrics: Dict[str, Any]) -> float:
+        """Calculate overall network health score"""
+        health_score = 100.0
+        
+        # Deduct points for high latency
+        if 'latency' in metrics and metrics['latency'].get('current', 0) > 100:
+            health_score -= min(20, (metrics['latency']['current'] - 100) / 10)
+        
+        # Deduct points for packet loss
+        if 'packet_loss' in metrics and metrics['packet_loss'].get('current', 0) > 0:
+            health_score -= min(30, metrics['packet_loss']['current'] * 10)
+        
+        # Deduct points for low bandwidth
+        if 'bandwidth' in metrics and metrics['bandwidth'].get('current', 100) < 50:
+            health_score -= min(20, (50 - metrics['bandwidth']['current']) / 2)
+        
+        return max(0, min(100, health_score))
     
     def run(self):
         """Run the dashboard server"""

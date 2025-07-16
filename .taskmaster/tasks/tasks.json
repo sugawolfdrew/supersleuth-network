@@ -1,9 +1,466 @@
 {
   "master": {
-    "tasks": [],
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Replace Mock Monitoring Metrics with Real System Data",
+        "description": "Replace randomly generated metrics with real system data by creating modular, Claude Code-orchestrated monitoring tools that can be programmatically invoked.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "This task involves developing adaptable Python monitoring modules that Claude Code can combine, modify, and customize based on IT professional needs. Implementation steps:\n1. Integrate psutil library for CPU/memory metrics collection\n2. Use netifaces for network interface statistics\n3. Implement modular diagnostic functions that can be invoked programmatically\n4. Design a flexible API for monitoring components\n5. Add data validation to ensure accuracy\n\nFiles to modify:\n- src/core/monitoring.py\n- src/interfaces/monitoring_api.py (new file)\n\nCode example for CPU metrics:\n```python\nimport psutil\n\ndef get_cpu_metrics():\n    cpu_percent = psutil.cpu_percent(interval=1, percpu=True)\n    cpu_times = psutil.cpu_times_percent(interval=1, percpu=True)\n    return {\n        'percent': cpu_percent,\n        'times': cpu_times,\n        'count': psutil.cpu_count(logical=True)\n    }\n```",
+        "testStrategy": "1. Unit tests for each metric collection function to verify data accuracy\n2. Integration tests to ensure monitoring API correctly provides real metrics\n3. Performance tests to measure overhead of real data collection\n4. Compatibility tests to verify Claude Code can effectively orchestrate the monitoring modules\n5. Usability tests with sample Claude Code prompts to validate the API design",
+        "subtasks": [
+          {
+            "id": 4,
+            "title": "Implement Advanced Diagnostic Functions",
+            "description": "Create specialized diagnostic functions that go beyond basic metrics to provide deeper system insights.",
+            "status": "done",
+            "dependencies": [],
+            "details": "1. Implement process_analysis() to identify resource-intensive processes\n2. Create system_bottleneck_detection() to highlight potential performance issues\n3. Develop historical_trend_analysis() to track metrics over time\n4. Add anomaly_detection() to identify unusual system behavior\n5. Ensure all functions can be called independently or as part of a diagnostic suite\n6. Document each function with examples of how Claude Code might use them\n7. Add appropriate error handling and fallback mechanisms",
+            "testStrategy": "Create unit tests for each advanced diagnostic function. Test with various system conditions to verify accurate detection of issues. Verify functions can be called independently and as part of larger diagnostic workflows."
+          },
+          {
+            "id": 5,
+            "title": "Create Claude Code Integration Examples",
+            "description": "Develop example scenarios and documentation showing how Claude Code can orchestrate the monitoring tools.",
+            "status": "done",
+            "dependencies": [
+              4
+            ],
+            "details": "1. Create a documentation file with example Claude Code prompts\n2. Develop sample scenarios for common IT troubleshooting tasks\n3. Show how Claude Code can combine different monitoring functions\n4. Provide examples of how to interpret the monitoring data\n5. Create templates for common monitoring workflows\n6. Document best practices for IT professionals to request custom monitoring via Claude Code\n7. Include examples of how Claude Code can generate visualizations or reports from the monitoring data\n<info added on 2025-07-16T20:31:43.103Z>\nCreated comprehensive Claude Code integration documentation and examples including:\n\n1. Main README with overview, benefits, and integration methods\n2. Detailed prompt templates comparing effective vs ineffective prompts for various monitoring scenarios\n3. Step-by-step workflow examples for complex diagnostics (slow website, VPN issues, security incidents)\n4. Main integration module (claude_code_integration.py) with natural language parsing and intelligent tool orchestration\n5. Four scenario-specific scripts demonstrating real-world use cases:\n   - slow_network.py (5 scenarios + interactive mode)\n   - connectivity_issues.py (6 scenarios + troubleshooting wizard)\n   - security_incident.py (6 scenarios + incident simulator)\n   - performance_degradation.py (6 complex scenarios + diagnostic assistant)\n\nEach script demonstrates Claude Code's ability to interpret natural language, select appropriate tools, execute workflows, and generate actionable reports. In total, developed 23 detailed scenarios covering performance, connectivity, DNS, security, and complex multi-layer issues.\n</info added on 2025-07-16T20:31:43.103Z>",
+            "testStrategy": "Test the examples with actual Claude Code to verify they work as expected. Gather feedback from IT professionals on the usefulness and clarity of the examples. Verify the examples cover a wide range of common monitoring needs."
+          },
+          {
+            "id": 6,
+            "title": "Implement CPU Metrics Collection with psutil",
+            "description": "Integrate the psutil library to collect real CPU metrics including usage percentage, times, and count information.",
+            "status": "done",
+            "dependencies": [],
+            "details": "1. Install psutil library if not already installed\n2. Create functions in src/core/monitoring.py to collect CPU metrics\n3. Implement get_cpu_metrics() function as shown in the example\n4. Add error handling for potential system access issues\n5. Ensure appropriate sampling intervals to avoid performance impact\n6. Replace mock CPU data generation with the new real metrics collection\n<info added on 2025-07-16T17:28:52.429Z>\n7. Investigate why monitoring values still appear simulated despite dashboard running correctly\n8. Check if the real metrics collection functions are being properly called in the dashboard code\n9. Verify data flow from monitoring.py to the dashboard visualization components\n10. Add logging statements to trace metrics collection and transmission\n11. Compare output values with expected ranges for real CPU metrics to identify simulation patterns\n</info added on 2025-07-16T17:28:52.429Z>",
+            "testStrategy": "Create unit tests that verify CPU metrics are returned in the expected format. Use mocking to test error handling scenarios."
+          },
+          {
+            "id": 7,
+            "title": "Implement DNS Diagnostics Module",
+            "description": "Create a comprehensive DNS diagnostics module with minimal dependencies that can be orchestrated by Claude Code.",
+            "status": "done",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Implement DNS resolution testing for various record types (A, AAAA, MX, TXT, etc.)\n2. Create DNS server health check functions to verify nameserver availability and response times\n3. Develop response time analysis to identify performance issues\n4. Add DNS cache analysis to examine local DNS cache health\n5. Implement DNSSEC validation checking\n6. Design all functions to be independently callable with clear parameters\n7. Use only standard library modules (socket, dns.resolver) to minimize dependencies\n8. Ensure proper error handling for network timeouts and DNS failures\n9. Add documentation for Claude Code integration",
+            "testStrategy": "Create unit tests for each DNS diagnostic function. Test with various DNS configurations and simulated failure scenarios. Verify functions can detect common DNS issues like misconfiguration or performance problems."
+          },
+          {
+            "id": 8,
+            "title": "Implement Port Connectivity Scanner",
+            "description": "Develop a modular port connectivity scanner that can test service availability across networks.",
+            "status": "done",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Create service_availability_check() function to test if specific ports are open on target systems\n2. Implement application-specific port testing for common services (HTTP, SMTP, DNS, etc.)\n3. Develop bulk scanning capabilities to efficiently test multiple ports/hosts\n4. Add timeout and retry configuration options\n5. Implement connection quality metrics (latency, stability)\n6. Use only standard library modules (socket) to minimize dependencies\n7. Ensure proper error handling for network timeouts and connection failures\n8. Design functions to be independently callable with clear parameters\n9. Add documentation for Claude Code integration",
+            "testStrategy": "Test port scanning functions against various network services. Verify proper handling of open ports, closed ports, filtered ports, and timeouts. Test bulk scanning performance and accuracy."
+          },
+          {
+            "id": 9,
+            "title": "Implement DHCP Diagnostics",
+            "description": "Create a DHCP diagnostics module to analyze DHCP server health and configuration.",
+            "status": "done",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Implement DHCP server discovery to identify available DHCP servers on the network\n2. Create IP conflict detection to identify address conflicts\n3. Develop lease analysis functions to examine DHCP lease information\n4. Add rogue DHCP server detection capabilities\n5. Implement lease renewal testing\n6. Use minimal dependencies (standard library and netifaces)\n7. Design functions to be independently callable with clear parameters\n8. Ensure proper error handling for network issues\n9. Add documentation for Claude Code integration",
+            "testStrategy": "Test DHCP diagnostic functions in various network environments. Verify detection of common DHCP issues like address conflicts and rogue servers. Test with different DHCP server implementations."
+          },
+          {
+            "id": 10,
+            "title": "Implement Application Layer Testing",
+            "description": "Develop application layer testing modules focused on HTTP/HTTPS endpoint monitoring.",
+            "status": "done",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Create HTTP/HTTPS endpoint monitoring functions to test web service availability\n2. Implement response time testing with configurable thresholds\n3. Add SSL/TLS certificate validation for HTTPS endpoints\n4. Develop content validation capabilities to verify expected responses\n5. Implement HTTP header analysis\n6. Add support for authentication in requests\n7. Use only standard library modules (http.client, ssl) to minimize dependencies\n8. Design functions to be independently callable with clear parameters\n9. Ensure proper error handling for network and application issues\n10. Add documentation for Claude Code integration",
+            "testStrategy": "Test application layer functions against various web services. Verify detection of common issues like certificate problems, slow responses, and unexpected content. Test with different authentication methods and response types."
+          },
+          {
+            "id": 11,
+            "title": "Implement Routing Diagnostics",
+            "description": "Create routing diagnostic tools to analyze network paths and routing configurations.",
+            "status": "done",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Implement route table analysis to examine local routing configuration\n2. Create path MTU discovery functions to identify MTU issues\n3. Develop enhanced traceroute capabilities with timing and packet loss metrics\n4. Add gateway analysis to verify default gateway functionality\n5. Implement route stability monitoring\n6. Use minimal dependencies (standard library, netifaces, and psutil)\n7. Design functions to be independently callable with clear parameters\n8. Ensure proper error handling for network and permission issues\n9. Add documentation for Claude Code integration",
+            "testStrategy": "Test routing diagnostic functions in various network environments. Verify detection of common routing issues like MTU problems and gateway failures. Test with different network configurations and simulated routing problems."
+          },
+          {
+            "id": 2,
+            "title": "Implement Memory and Disk Metrics Collection",
+            "description": "Create modular diagnostic functions to collect real memory usage and disk I/O statistics using psutil.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create get_memory_metrics() function to collect RAM usage, available memory, and swap usage\n2. Implement get_disk_metrics() to gather disk usage, I/O statistics, and read/write rates\n3. Design functions to be independently callable and composable\n4. Add appropriate error handling for cases where disk metrics might be unavailable\n5. Ensure each function returns structured data suitable for programmatic analysis\n6. Document each function with clear input/output specifications for Claude Code integration\n<info added on 2025-07-16T18:28:45.887Z>\nCompleted Network Health Check module with the following components:\n\n1. Network interface health monitoring with error rate detection\n   - Tracks packet errors, drops, and collisions\n   - Monitors interface bandwidth utilization\n   - Alerts on abnormal error rates\n\n2. Basic connectivity tests\n   - Gateway reachability verification\n   - DNS resolution testing\n   - Internet connectivity checks via configurable endpoints\n\n3. Active connection analysis\n   - Current TCP/UDP connection inventory\n   - Connection state tracking\n   - Identification of potential network bottlenecks\n\nModule designed as first-line diagnostic tool for IT professionals troubleshooting network issues, with functions that are independently callable and return structured data suitable for Claude Code integration.\n</info added on 2025-07-16T18:28:45.887Z>",
+            "testStrategy": "Test that memory and disk metrics functions return data in the expected format. Verify error handling works correctly when simulating permission issues. Test functions can be called independently."
+          },
+          {
+            "id": 3,
+            "title": "Implement Network Interface Metrics with netifaces",
+            "description": "Integrate the netifaces library to create modular diagnostic functions for network interface statistics.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Install netifaces library if not already installed\n2. Create get_network_metrics() function in src/core/monitoring.py\n3. Use netifaces to identify all network interfaces\n4. Collect bytes sent/received, packets sent/received, and errors for each interface\n5. Calculate bandwidth usage based on delta between measurements\n6. Design function to be independently callable with optional parameters for filtering interfaces\n7. Document the function with clear input/output specifications for Claude Code integration",
+            "testStrategy": "Test network metrics collection with different interface configurations. Verify bandwidth calculations are accurate by comparing consecutive measurements. Test function can be called with various parameter combinations."
+          },
+          {
+            "id": 1,
+            "title": "Implement CPU Metrics Collection with psutil",
+            "description": "Integrate the psutil library to collect real CPU metrics including usage percentage, times, and count information.",
+            "dependencies": [],
+            "details": "1. Install psutil library if not already installed\n2. Create functions in src/core/monitoring.py to collect CPU metrics\n3. Implement get_cpu_metrics() function as shown in the example\n4. Add error handling for potential system access issues\n5. Ensure appropriate sampling intervals to avoid performance impact\n6. Replace mock CPU data generation with the new real metrics collection\n<info added on 2025-07-16T17:28:52.429Z>\n7. Investigate why monitoring values still appear simulated despite dashboard running correctly\n8. Check if the real metrics collection functions are being properly called in the dashboard code\n9. Verify data flow from monitoring.py to the dashboard visualization components\n10. Add logging statements to trace metrics collection and transmission\n11. Compare output values with expected ranges for real CPU metrics to identify simulation patterns\n</info added on 2025-07-16T17:28:52.429Z>",
+            "status": "done",
+            "testStrategy": "Create unit tests that verify CPU metrics are returned in the expected format. Use mocking to test error handling scenarios."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement Real Security Vulnerability Detection",
+        "description": "Create modular security diagnostic tools that Claude Code can orchestrate to perform customized security vulnerability assessments.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "This task involves implementing modular security vulnerability detection capabilities that Claude Code can combine and customize:\n\n1. Create adaptable security assessment functions as Python modules\n2. Implement CVE database lookup functionality as a standalone service\n3. Add modular port scanning with service detection\n4. Create a flexible vulnerability reporting system\n\nFiles to modify:\n- src/diagnostics/security_assessment.py\n\nImplementation example for a modular security scanner:\n```python\n# Example of a modular security scanner function that Claude Code can customize\ndef scan_for_vulnerabilities(target_ip, scan_type='basic', ports=None, timeout=300):\n    \"\"\"Modular security scanner that can be customized by Claude Code.\n    \n    Args:\n        target_ip (str): The IP address to scan\n        scan_type (str): The type of scan ('basic', 'full', 'stealth')\n        ports (list): Specific ports to scan, or None for defaults\n        timeout (int): Scan timeout in seconds\n        \n    Returns:\n        dict: Structured vulnerability findings\n    \"\"\"\n    results = {}\n    \n    # Port scanning module\n    if scan_type in ['basic', 'full']:\n        results['open_ports'] = scan_ports(target_ip, ports=ports)\n    \n    # Service detection module\n    if scan_type in ['full']:\n        results['services'] = detect_services(target_ip, results['open_ports'])\n    \n    # Vulnerability checking module\n    results['vulnerabilities'] = check_vulnerabilities(target_ip, results.get('services', []))\n    \n    # CVE enrichment module\n    if results['vulnerabilities']:\n        results['vulnerabilities'] = enrich_with_cve_data(results['vulnerabilities'])\n    \n    return results\n```",
+        "testStrategy": "1. Test individual security modules in isolation\n2. Validate that Claude Code can successfully invoke and combine modules\n3. Test module adaptability with different parameters and configurations\n4. Verify CVE detection accuracy against reference systems\n5. Test performance and resource usage of individual modules\n6. Ensure modules can be safely combined without side effects",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement OpenVAS/Nessus Integration Module",
+            "description": "Create a modular function that interfaces with OpenVAS or Nessus to perform vulnerability scans on target systems. Design it to be easily invoked and customized by Claude Code.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Create a set of modular functions in security_assessment.py that handle different aspects of security scanning. Instead of a monolithic class, implement discrete functions for authentication, target creation, scan configuration, scan execution, and result retrieval. Each function should be well-documented with clear parameters and return values to facilitate Claude Code's understanding. Store configuration parameters in a separate config file to allow for easy customization. Ensure each function has proper error handling, timeout management, and can operate independently.",
+            "testStrategy": "Create mock responses from the OpenVAS/Nessus API to test each function in isolation. Verify that Claude Code can successfully invoke these functions with different parameters. Test authentication failures, scan initiation, and result parsing."
+          },
+          {
+            "id": 2,
+            "title": "Implement CVE Database Integration",
+            "description": "Create modular functions to query and retrieve vulnerability information from CVE databases that Claude Code can use to enrich security assessment results.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Implement a set of functions for interfacing with the National Vulnerability Database (NVD) API or similar sources. Create separate functions for fetching vulnerability details by CVE ID, searching for vulnerabilities by keywords, and retrieving severity scores. Implement a local caching mechanism that can be optionally used to reduce API calls. Each function should handle rate limiting, connection errors, and provide clear documentation on usage patterns. Design the functions to be composable, allowing Claude Code to chain them together for complex queries.",
+            "testStrategy": "Create a test suite with mock CVE data responses. Test each function individually and in combination. Verify that Claude Code can successfully invoke these functions with different parameters and interpret the results correctly."
+          },
+          {
+            "id": 3,
+            "title": "Implement Port Scanning with Service Detection",
+            "description": "Create modular functions for network port scanning and service detection that Claude Code can customize and invoke for different security assessment scenarios.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Implement a set of functions using libraries like python-nmap or scapy to perform port scanning and service detection. Create separate functions for different scanning strategies (e.g., TCP connect, SYN stealth, UDP) and service detection methods. Each function should accept parameters for customization, such as port ranges, timeout settings, and scan intensity. Include comprehensive documentation that explains the tradeoffs between different scanning methods to help Claude Code make appropriate choices. Ensure all functions include proper authorization checks and ethical boundaries.",
+            "testStrategy": "Test against controlled environments with known open ports and services. Verify that Claude Code can successfully invoke these functions with different parameters. Test the accuracy and performance of each scanning method under different network conditions."
+          },
+          {
+            "id": 4,
+            "title": "Create Security Assessment Orchestration Examples",
+            "description": "Develop example workflows showing how Claude Code can orchestrate the security assessment modules to perform comprehensive vulnerability assessments.",
+            "status": "done",
+            "dependencies": [
+              3
+            ],
+            "details": "Create a set of example scripts that demonstrate how Claude Code can combine the various security assessment modules for different scenarios. Include examples for basic security audits, comprehensive vulnerability assessments, and targeted security checks. Document the decision points where Claude Code would need to make choices based on the specific security requirements. Implement helper functions that Claude Code can use to manage the workflow between different security modules, such as filtering and transforming results between steps.",
+            "testStrategy": "Create integration tests that verify the example workflows with mocked components. Test different combinations of security modules and verify that results are properly processed between steps. Verify that Claude Code can understand and modify these examples for custom scenarios."
+          },
+          {
+            "id": 5,
+            "title": "Implement Vulnerability Reporting System",
+            "description": "Create modular reporting functions that Claude Code can use to generate customized vulnerability reports with different levels of detail and formatting options.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Implement a set of functions for generating vulnerability reports from assessment results. Create separate functions for different report components (executive summary, detailed findings, remediation recommendations) and output formats (JSON, HTML, PDF). Design the functions to be composable, allowing Claude Code to generate custom reports by combining different components. Include functions for filtering and prioritizing vulnerabilities based on different criteria (severity, exploitability, affected systems). Add functions for comparing results across multiple scans to identify new, fixed, and persistent vulnerabilities.",
+            "testStrategy": "Test each reporting function with sample vulnerability data. Verify that Claude Code can successfully invoke these functions with different parameters to generate customized reports. Test the filtering and comparison functions with complex vulnerability datasets."
+          },
+          {
+            "id": 6,
+            "title": "Create Comprehensive Module Documentation",
+            "description": "Develop detailed documentation for all security assessment modules to help Claude Code understand their capabilities, parameters, and appropriate usage patterns.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Create comprehensive documentation for all security assessment modules, including function signatures, parameter descriptions, return value formats, and usage examples. Include information about the security implications, performance characteristics, and potential limitations of each module. Document common patterns for combining modules and best practices for different security assessment scenarios. Create a structured index of all available modules to help Claude Code discover relevant functionality. Use docstring formats that are easily parseable by Claude Code.\n<info added on 2025-07-16T21:06:08.951Z>\nDocumentation has been completed with the following components:\n\n1. README.md overview providing a high-level introduction to the security assessment system\n2. Detailed module documentation:\n   - security_scanner.md: Complete documentation of scanning functions, parameters, and return formats\n   - cve_database.md: Documentation of the CVE database interface, query patterns, and update mechanisms\n   - vulnerability_reporter.md: Documentation of reporting functions, output formats, and integration options\n\nAll documentation includes:\n- Function signatures with parameter descriptions\n- Return value formats and examples\n- Security implications and performance characteristics\n- Module limitations and edge cases\n- Common integration patterns between modules\n- Best practices for Claude Code orchestration\n\nDocumentation follows a consistent, parseable format to ensure Claude Code can effectively discover and utilize all security assessment functionality.\n</info added on 2025-07-16T21:06:08.951Z>",
+            "testStrategy": "Verify that Claude Code can correctly interpret the documentation to make appropriate choices about module usage. Test with sample security assessment requests to ensure the documentation provides sufficient guidance."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Implement Comprehensive Network Scanning",
+        "description": "Create modular network diagnostic tools that Claude Code can orchestrate for IT troubleshooting, including service detection, OS fingerprinting, and script scanning capabilities.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "This task involves developing adaptable network analysis functions as Python modules that Claude Code can combine and customize:\n1. Create modular Python functions for network diagnostics\n2. Implement service version detection as a standalone module\n3. Add OS fingerprinting capabilities as a separate module\n4. Implement script scanning as an independent diagnostic tool\n5. Design an API interface for Claude Code to orchestrate these tools\n\nFiles to modify:\n- src/diagnostics/network_discovery.py\n- src/diagnostics/service_detection.py\n- src/diagnostics/os_fingerprinting.py\n- src/diagnostics/script_scanning.py\n- src/diagnostics/diagnostic_api.py\n\nImplementation example:\n```python\nimport nmap\n\n# Modular function for basic port scanning\ndef scan_ports(target, ports='1-1000'):\n    scanner = nmap.PortScanner()\n    scanner.scan(target, ports, '-v')\n    return scanner.all_hosts()\n\n# Modular function for OS detection\ndef detect_os(target):\n    scanner = nmap.PortScanner()\n    scanner.scan(target, arguments='-O')\n    if target in scanner.all_hosts():\n        if 'osmatch' in scanner[target]:\n            return scanner[target]['osmatch']\n    return []\n\n# Modular function for service detection\ndef detect_services(target, ports='1-1000'):\n    scanner = nmap.PortScanner()\n    scanner.scan(target, ports, '-sV')\n    services = {}\n    if target in scanner.all_hosts():\n        for proto in scanner[target].all_protocols():\n            for port in scanner[target][proto].keys():\n                services[port] = scanner[target][proto][port]\n    return services\n\n# API for Claude Code to orchestrate diagnostics\nclass NetworkDiagnosticAPI:\n    @staticmethod\n    def run_diagnostic(target, diagnostic_type, **kwargs):\n        if diagnostic_type == 'port_scan':\n            return scan_ports(target, kwargs.get('ports', '1-1000'))\n        elif diagnostic_type == 'os_detection':\n            return detect_os(target)\n        elif diagnostic_type == 'service_detection':\n            return detect_services(target, kwargs.get('ports', '1-1000'))\n        # Additional diagnostic types can be added here\n```",
+        "testStrategy": "1. Test each diagnostic module independently with known network configurations\n2. Validate OS detection accuracy against reference systems\n3. Test service detection against servers with known services\n4. Verify that Claude Code can successfully orchestrate different diagnostic tools\n5. Test the API interface with various combinations of diagnostic parameters\n6. Measure performance and resource usage of individual diagnostic modules",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Integrate python-nmap and implement basic scanning",
+            "description": "Set up the NetworkScanner class with python-nmap integration and implement basic port scanning functionality.",
+            "status": "done",
+            "dependencies": [],
+            "details": "Create the NetworkScanner class that initializes the nmap.PortScanner object. Implement methods for basic port scanning that will serve as the foundation for more advanced scanning features. Include methods to scan specific targets with configurable port ranges and return basic scan results.",
+            "testStrategy": "Test with local network devices using basic port scanning. Verify that the scanner correctly identifies open ports on test devices."
+          },
+          {
+            "id": 2,
+            "title": "Implement service version detection",
+            "description": "Create a modular service detection function that Claude Code can invoke for identifying services running on network devices.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop a standalone service_detection.py module with functions that enable service version detection using nmap's version detection capabilities (-sV flag). Create methods to extract and format service information including name, version, and other relevant details. Ensure the module can be called independently or as part of a larger diagnostic workflow orchestrated by Claude Code.",
+            "testStrategy": "Test against servers with known services. Verify that the module correctly identifies service types and versions (e.g., Apache HTTP Server 2.4.x) when called directly and when orchestrated through the API."
+          },
+          {
+            "id": 3,
+            "title": "Add OS fingerprinting capabilities",
+            "description": "Create a modular OS fingerprinting function that Claude Code can invoke to identify operating systems on network devices.",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop a standalone os_fingerprinting.py module with functions for OS detection using nmap's OS detection feature (-O flag). Create methods to extract and return OS information including OS name, version, accuracy, and other relevant details. Ensure the module can be called independently or as part of a larger diagnostic workflow orchestrated by Claude Code.",
+            "testStrategy": "Test against devices with known operating systems. Verify accuracy of OS detection and proper handling of confidence levels when called directly and when orchestrated through the API."
+          },
+          {
+            "id": 4,
+            "title": "Implement script scanning for service analysis",
+            "description": "Create a modular script scanning function that Claude Code can invoke for deeper analysis of network services.",
+            "status": "done",
+            "dependencies": [
+              2
+            ],
+            "details": "Develop a standalone script_scanning.py module with functions that support nmap's scripting engine (--script flags). Implement methods to run specific categories of scripts (e.g., default, safe, vuln) or individual scripts. Create functions to parse and present script scan results in a structured format. Ensure the module can be called independently or as part of a larger diagnostic workflow orchestrated by Claude Code.",
+            "testStrategy": "Test script scanning against test servers with known configurations. Verify that script results are properly captured and formatted when called directly and when orchestrated through the API."
+          },
+          {
+            "id": 5,
+            "title": "Create a diagnostic API for Claude Code orchestration",
+            "description": "Implement an API interface that allows Claude Code to orchestrate and combine different network diagnostic tools.",
+            "status": "done",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Develop a diagnostic_api.py module that provides a unified interface for Claude Code to access all network diagnostic functions. Implement a NetworkDiagnosticAPI class with methods to run individual diagnostics or combinations of diagnostics. Create helper functions to format and combine results from different diagnostic tools. Include documentation and examples of how Claude Code can use the API for different IT troubleshooting scenarios.",
+            "testStrategy": "Test the API with various combinations of diagnostic parameters. Verify that Claude Code can successfully orchestrate different diagnostic tools and receive properly formatted results. Test with complex diagnostic workflows that combine multiple tools."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement Platform-Specific Support",
+        "description": "Ensure full compatibility across Windows, macOS, and Linux platforms with native integrations for each operating system.",
+        "details": "This task involves implementing platform-specific features and ensuring compatibility:\n\n1. Windows Support:\n   - Integrate with WMI for system metrics\n   - Implement PowerShell script execution\n   - Add Windows Event Log integration\n   - Handle Windows-specific networking commands\n\n2. macOS Support:\n   - Create CoreWLAN Python bindings for WiFi scanning\n   - Implement airport utility wrapper\n   - Add macOS-specific security checks\n   - Support macOS system monitoring APIs\n\n3. Linux Distribution Compatibility:\n   - Test and fix for Ubuntu, RHEL, Debian\n   - Handle different network tools (iw vs iwconfig)\n   - Support different init systems (systemd, upstart, etc.)\n   - Create distribution detection logic\n\nImplementation example for platform detection:\n```python\nimport platform\nimport subprocess\n\ndef get_platform_info():\n    system = platform.system()\n    if system == 'Windows':\n        version = platform.win32_ver()\n        return {'system': 'Windows', 'version': version[0], 'details': version}\n    elif system == 'Darwin':\n        version = platform.mac_ver()\n        return {'system': 'macOS', 'version': version[0], 'details': version}\n    elif system == 'Linux':\n        # Get Linux distribution details\n        try:\n            import distro\n            dist_info = distro.info()\n            return {'system': 'Linux', 'distribution': dist_info['id'], 'version': dist_info['version'], 'details': dist_info}\n        except ImportError:\n            # Fallback if distro module is not available\n            return {'system': 'Linux', 'distribution': 'unknown', 'version': platform.release()}\n    return {'system': system, 'version': 'unknown'}\n```",
+        "testStrategy": "1. Test on Windows 10/11 and Server 2019/2022\n2. Test on macOS 12+ (Monterey and newer)\n3. Test on major Linux distributions (Ubuntu, RHEL, Debian)\n4. Validate platform-specific features work correctly\n5. Ensure graceful degradation when platform-specific features are unavailable",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Platform Detection and Abstraction Layer",
+            "description": "Create a robust platform detection system and abstraction layer that will serve as the foundation for all platform-specific implementations.",
+            "dependencies": [],
+            "details": "Create a PlatformManager class that detects the operating system and provides a consistent interface for platform-specific operations. Implement the platform detection logic using the platform module and enhance it with distribution detection for Linux. Define abstract interfaces for system operations that will be implemented differently on each platform. Include methods for executing system commands with appropriate wrappers for each OS. The class should expose a factory method that returns the appropriate platform-specific implementation.",
+            "status": "pending",
+            "testStrategy": "Write unit tests that mock different platform environments to verify correct detection. Test the abstraction layer with simple cross-platform operations to ensure the interface works consistently."
+          },
+          {
+            "id": 2,
+            "title": "Implement Windows-Specific Support",
+            "description": "Develop the Windows implementation of the platform abstraction layer with native Windows integrations.",
+            "dependencies": [],
+            "details": "Create a WindowsPlatform class that implements the platform abstraction interface. Integrate with Windows Management Instrumentation (WMI) for system metrics collection using either the wmi or pywin32 package. Implement methods for PowerShell script execution with proper error handling and output parsing. Add Windows Event Log integration for logging and monitoring system events. Develop networking utilities that use Windows-specific commands (netsh, ipconfig) and parse their outputs. Implement registry access methods for configuration storage and retrieval.",
+            "status": "pending",
+            "testStrategy": "Test on Windows machines with different versions (10, 11, Server). Create mock WMI responses for unit testing. Verify PowerShell script execution with sample scripts that perform simple operations."
+          },
+          {
+            "id": 3,
+            "title": "Implement macOS-Specific Support",
+            "description": "Develop the macOS implementation of the platform abstraction layer with native macOS integrations.",
+            "dependencies": [],
+            "details": "Create a MacOSPlatform class that implements the platform abstraction interface. Develop Python bindings for CoreWLAN to enable WiFi scanning and management. Implement a wrapper for the airport utility to access wireless network information. Add methods for interacting with macOS-specific security features through the security command-line tool. Create utilities for accessing macOS system monitoring APIs through subprocess calls to commands like top, vm_stat, and system_profiler. Implement support for AppleScript execution for automation tasks that require GUI interaction.",
+            "status": "pending",
+            "testStrategy": "Test on different macOS versions (Monterey, Ventura, Sonoma). Verify CoreWLAN bindings with different network configurations. Test airport utility wrapper with various WiFi environments."
+          },
+          {
+            "id": 4,
+            "title": "Implement Linux Distribution Compatibility",
+            "description": "Develop the Linux implementation of the platform abstraction layer with support for multiple distributions.",
+            "dependencies": [],
+            "details": "Create a LinuxPlatform class that implements the platform abstraction interface. Implement distribution detection logic using the distro package to identify the specific Linux distribution and version. Develop adapters for different network tools (iw, iwconfig, ip, ifconfig) that select the appropriate tool based on availability. Create handlers for different init systems (systemd, upstart, SysV init) to manage services consistently across distributions. Implement package management abstractions that work with apt, yum, dnf, and pacman depending on the distribution. Add filesystem utilities that account for different mount point conventions and filesystem types.",
+            "status": "pending",
+            "testStrategy": "Test on major distributions (Ubuntu, RHEL, Debian, CentOS, Fedora). Verify distribution detection with containerized environments. Test network tool adapters with different network configurations and available tools."
+          },
+          {
+            "id": 5,
+            "title": "Implement Cross-Platform Testing and Validation Suite",
+            "description": "Create a comprehensive testing and validation suite to ensure consistent behavior across all supported platforms.",
+            "dependencies": [],
+            "details": "Develop a test harness that can run the same functional tests across all platforms. Create platform-specific test cases that verify the correct implementation of native features. Implement a validation suite that checks for feature parity across platforms where applicable. Add performance benchmarks to compare operations across different operating systems. Create a compatibility matrix that documents which features are available on which platforms. Implement continuous integration workflows that test on all target platforms using virtual machines or containers where possible. Add a reporting mechanism that highlights platform-specific issues or inconsistencies.",
+            "status": "pending",
+            "testStrategy": "Use CI/CD pipelines with multiple OS runners. Implement automated testing on virtual machines for each supported platform. Create a test dashboard that shows test results across all platforms side by side."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Implement Authentication and Authorization",
+        "description": "Create modular authentication and access control functions that Claude Code can orchestrate, allowing for adaptable security modules that can be combined based on specific access control needs.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "details": "This task involves implementing modular authentication and authorization components that Claude Code can orchestrate:\n\n1. LDAP/Active Directory Integration:\n   - Create modular LDAP authentication functions\n   - Implement AD group-based authorization functions\n   - Add Kerberos support functions\n\n2. OAuth2/SAML Support:\n   - Implement OAuth2 provider integration functions\n   - Add SAML 2.0 support functions\n   - Create JWT token handling utilities\n\n3. Multi-Factor Authentication:\n   - Implement TOTP support functions\n   - Add SMS/Email verification utilities\n   - Support hardware token integration functions\n\nFiles to create/modify:\n- src/core/auth_functions.py\n- src/core/auth_modules/ (new directory)\n\nImplementation example for modular LDAP authentication:\n```python\nimport ldap\n\ndef initialize_ldap_connection(server_uri):\n    \"\"\"Initialize and return an LDAP connection object.\"\"\"\n    conn = ldap.initialize(server_uri)\n    conn.set_option(ldap.OPT_REFERRALS, 0)\n    return conn\n\ndef authenticate_ldap_user(conn, username, password, base_dn):\n    \"\"\"Authenticate a user against LDAP directory.\"\"\"\n    try:\n        user_dn = f\"cn={username},{base_dn}\"\n        conn.simple_bind_s(user_dn, password)\n        return True, \"Authentication successful\"\n    except ldap.INVALID_CREDENTIALS:\n        return False, \"Invalid credentials\"\n    except Exception as e:\n        return False, f\"LDAP authentication error: {e}\"\n\ndef get_user_ldap_groups(conn, username, base_dn):\n    \"\"\"Retrieve user groups from LDAP directory.\"\"\"\n    try:\n        user_dn = f\"cn={username},{base_dn}\"\n        search_filter = f\"(&(objectClass=user)(cn={username}))\"\n        result = conn.search_s(base_dn, ldap.SCOPE_SUBTREE, search_filter, ['memberOf'])\n        \n        if not result:\n            return []\n            \n        user_record = result[0]\n        if 'memberOf' in user_record[1]:\n            return user_record[1]['memberOf']\n        return []\n    except Exception as e:\n        print(f\"LDAP group lookup error: {e}\")\n        return []\n```",
+        "testStrategy": "1. Test individual authentication function modules with unit tests\n2. Create integration tests showing how Claude Code can orchestrate different auth modules\n3. Validate OAuth2 function modules with test providers\n4. Test SAML authentication functions with test IdP\n5. Verify MFA function modules with various methods\n6. Test authorization rule functions and group-based permission utilities\n7. Create example Claude Code prompts that demonstrate orchestration of auth modules",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement LDAP/Active Directory Integration",
+            "description": "Create modular LDAP authentication functions with Active Directory integration and Kerberos support. These functions will enable Claude Code to orchestrate enterprise user authentication using directory credentials.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "1. Create `src/core/auth_modules/ldap_functions.py` with modular LDAP authentication functions\n2. Implement separate functions for LDAP connection, authentication, and group retrieval\n3. Add Kerberos authentication functions using the `gssapi` library\n4. Create `src/core/auth_modules/ad_functions.py` for Active Directory specific functionality\n5. Implement group-based authorization functions for mapping AD groups to application roles\n6. Add configuration utility functions for LDAP/AD server details\n7. Create documentation showing how Claude Code can orchestrate these functions",
+            "testStrategy": "Create unit tests for each function with mock LDAP server responses. Test authentication success/failure cases, group retrieval, and Kerberos ticket validation. Create example Claude Code prompts that demonstrate function orchestration."
+          },
+          {
+            "id": 2,
+            "title": "Implement OAuth2 Provider Integration",
+            "description": "Create modular OAuth2 authentication functions for popular identity providers (Google, Microsoft, GitHub, etc.) that Claude Code can orchestrate to allow users to authenticate using their existing accounts.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "1. Create `src/core/auth_modules/oauth2_functions.py` with modular OAuth2 authentication functions\n2. Implement provider-specific function modules for Google, Microsoft, and GitHub\n3. Create callback handler functions for OAuth2 redirect flows\n4. Implement token validation and refresh function utilities\n5. Add user profile mapping functions for OAuth2 provider data\n6. Create configuration utility functions for OAuth2 client IDs and secrets\n7. Document how Claude Code can orchestrate these functions in different authentication flows",
+            "testStrategy": "Create unit tests for each OAuth2 function with mock provider responses. Test authentication flow functions, token validation utilities, and user profile mapping. Test token refresh and expiration handling functions. Create example Claude Code prompts showing function orchestration."
+          },
+          {
+            "id": 3,
+            "title": "Implement SAML 2.0 Support",
+            "description": "Create modular SAML 2.0 authentication functions that Claude Code can orchestrate to enable enterprise single sign-on integration with identity providers like Okta, OneLogin, and Azure AD.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "1. Create `src/core/auth_modules/saml_functions.py` with modular SAML authentication functions\n2. Implement SAML request generation and response parsing functions\n3. Add support functions for metadata exchange with identity providers\n4. Create handler functions for SAML assertions and attribute mapping\n5. Implement session creation functions based on SAML authentication\n6. Add JWT token generation functions for use after successful SAML authentication\n7. Create configuration utility functions for SAML entity IDs, certificates, and endpoints\n8. Document how Claude Code can orchestrate these functions for SSO flows",
+            "testStrategy": "Create tests for each SAML function with sample responses from different providers. Test assertion validation functions, attribute mapping utilities, and session creation functions. Create example Claude Code prompts showing function orchestration."
+          },
+          {
+            "id": 4,
+            "title": "Implement Multi-Factor Authentication",
+            "description": "Create modular multi-factor authentication functions that Claude Code can orchestrate, including TOTP (Time-based One-Time Password), SMS/Email verification codes, and hardware token integration.",
+            "status": "pending",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "1. Create `src/core/auth_modules/mfa_functions.py` with modular MFA functionality\n2. Implement TOTP generation and validation functions using the `pyotp` library\n3. Add QR code generation functions for TOTP setup\n4. Create SMS verification functions using Twilio or similar service\n5. Implement email verification code generation and validation functions\n6. Add support functions for hardware tokens using U2F/WebAuthn standards\n7. Create user enrollment function utilities for different MFA methods\n8. Implement MFA recovery option functions and backup code utilities\n9. Document how Claude Code can orchestrate these functions for different MFA scenarios",
+            "testStrategy": "Test each MFA function individually. Create tests for TOTP code generation and validation with known test vectors. Mock SMS/email services to verify code delivery and validation functions. Test hardware token registration and authentication flow functions. Create example Claude Code prompts showing function orchestration."
+          },
+          {
+            "id": 5,
+            "title": "Integrate Authentication Methods with Core Authorization System",
+            "description": "Create modular authorization functions that Claude Code can orchestrate to work with all authentication methods and implement role-based access control with proper session management.",
+            "status": "pending",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "1. Create `src/core/auth_functions.py` as the main authorization function library\n2. Implement provider-agnostic authentication utility functions that can use any backend\n3. Create role and permission model functions with inheritance support\n4. Implement session management functions with proper timeout and refresh mechanisms\n5. Add JWT token generation, validation, and refresh function utilities\n6. Create decorator functions for protecting API endpoints based on roles/permissions\n7. Implement audit logging functions for authentication and authorization events\n8. Add configuration utility functions for session timeouts, token expiration, and security policies\n9. Create comprehensive documentation showing how Claude Code can orchestrate these functions",
+            "testStrategy": "Create unit tests for each authorization function. Test role-based access control functions, permission inheritance utilities, and session management functions. Verify JWT token validation and refresh flow functions. Create example Claude Code prompts showing how to orchestrate different authorization scenarios."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement Vulnerability Scanner Integration",
+        "description": "Integrate with vulnerability scanning tools like OpenVAS, Nessus, and Qualys, and implement a local vulnerability database.",
+        "details": "This task involves integrating with vulnerability scanning tools and creating a vulnerability database:\n\n1. OpenVAS Integration:\n   - Create OpenVAS API client\n   - Implement scan scheduling\n   - Add results parsing and correlation\n\n2. Commercial Scanner Support:\n   - Implement Nessus API integration\n   - Add Qualys API integration\n   - Create unified vulnerability format\n\n3. Vulnerability Database:\n   - Implement CVE database sync\n   - Create vulnerability correlation engine\n   - Add risk scoring algorithm\n\nFiles to create:\n- src/integrations/openvas.py\n- src/integrations/nessus.py\n- src/integrations/qualys.py\n- src/core/vulnerability_db.py\n\nImplementation example for vulnerability database:\n```python\nimport sqlite3\nimport requests\nimport json\nimport datetime\n\nclass VulnerabilityDatabase:\n    def __init__(self, db_path='vulnerabilities.db'):\n        self.db_path = db_path\n        self.conn = None\n        self.init_db()\n    \n    def init_db(self):\n        self.conn = sqlite3.connect(self.db_path)\n        cursor = self.conn.cursor()\n        cursor.execute('''\n        CREATE TABLE IF NOT EXISTS vulnerabilities (\n            cve_id TEXT PRIMARY KEY,\n            description TEXT,\n            cvss_score REAL,\n            cvss_vector TEXT,\n            published_date TEXT,\n            last_modified TEXT,\n            references TEXT,\n            cwe_id TEXT\n        )\n        ''')\n        self.conn.commit()\n    \n    def sync_nvd_feed(self, year=None):\n        # If no year specified, sync current year\n        if year is None:\n            year = datetime.datetime.now().year\n            \n        url = f\"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-{year}.json.gz\"\n        # Download and process NVD feed\n        # Implementation details omitted for brevity\n        \n    def get_vulnerability(self, cve_id):\n        cursor = self.conn.cursor()\n        cursor.execute(\"SELECT * FROM vulnerabilities WHERE cve_id = ?\", (cve_id,))\n        return cursor.fetchone()\n    \n    def calculate_risk_score(self, cve_id, asset_value=5, exposure=5):\n        vuln = self.get_vulnerability(cve_id)\n        if not vuln:\n            return 0\n            \n        cvss_score = vuln[2]  # Index 2 is cvss_score\n        # Simple risk calculation: CVSS * Asset Value * Exposure / 125 * 10\n        # This gives a 1-10 risk score\n        risk_score = (cvss_score * asset_value * exposure) / 125 * 10\n        return min(10, max(1, risk_score))\n```",
+        "testStrategy": "1. Test OpenVAS integration against test instance\n2. Validate Nessus and Qualys API integration with test accounts\n3. Test vulnerability database sync with NVD feeds\n4. Verify risk scoring algorithm against known vulnerabilities\n5. Performance testing for large vulnerability datasets\n6. Test scan scheduling and results processing",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Compliance Framework Modules",
+        "description": "Create compliance checking modules for PCI DSS, HIPAA, and SOC2 standards with evidence collection and reporting capabilities.",
+        "details": "This task involves implementing compliance framework modules:\n\n1. PCI DSS Compliance Module:\n   - Implement checks for all 12 PCI DSS requirements\n   - Add evidence collection functionality\n   - Create compliance report generation\n\n2. HIPAA Compliance Module:\n   - Implement technical safeguards checks\n   - Add administrative safeguards validation\n   - Create physical safeguards assessment (where applicable)\n\n3. SOC2 Compliance Module:\n   - Implement security principle checks\n   - Add availability monitoring\n   - Create confidentiality controls validation\n\nFiles to create:\n- src/compliance/pci_dss.py\n- src/compliance/hipaa.py\n- src/compliance/soc2.py\n- src/compliance/compliance_engine.py\n\nImplementation example for compliance engine:\n```python\nclass ComplianceEngine:\n    def __init__(self):\n        self.compliance_modules = {}\n        self.evidence_store = {}\n    \n    def register_module(self, standard_name, module_instance):\n        self.compliance_modules[standard_name] = module_instance\n    \n    def run_assessment(self, standard_name, scope=None):\n        if standard_name not in self.compliance_modules:\n            raise ValueError(f\"Compliance standard {standard_name} not registered\")\n            \n        module = self.compliance_modules[standard_name]\n        results = module.assess(scope)\n        \n        # Store evidence\n        assessment_id = f\"{standard_name}-{datetime.datetime.now().isoformat()}\"\n        self.evidence_store[assessment_id] = {\n            'standard': standard_name,\n            'timestamp': datetime.datetime.now().isoformat(),\n            'scope': scope,\n            'results': results,\n            'evidence': module.get_collected_evidence()\n        }\n        \n        return {\n            'assessment_id': assessment_id,\n            'results': results,\n            'summary': module.get_summary(results)\n        }\n    \n    def generate_report(self, assessment_id, format='pdf'):\n        if assessment_id not in self.evidence_store:\n            raise ValueError(f\"Assessment ID {assessment_id} not found\")\n            \n        assessment = self.evidence_store[assessment_id]\n        standard_name = assessment['standard']\n        module = self.compliance_modules[standard_name]\n        \n        return module.generate_report(assessment, format)\n```",
+        "testStrategy": "1. Validate PCI DSS checks against compliance checklist\n2. Test HIPAA module in healthcare environment simulation\n3. Verify SOC2 controls against trust principles documentation\n4. Test evidence collection and storage\n5. Validate report generation for accuracy and completeness\n6. Test compliance engine with multiple simultaneous standards",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement Time-Series Database and Data Management",
+        "description": "Implement proper metrics storage with time-series database integration, data retention policies, baseline engine, and anomaly detection.",
+        "details": "This task involves implementing comprehensive data management:\n\n1. Time-Series Database Integration:\n   - Integrate with InfluxDB or TimescaleDB\n   - Implement efficient data ingestion\n   - Add query optimization\n\n2. Data Retention Policies:\n   - Create configurable retention periods\n   - Implement data aggregation/downsampling\n   - Add compliance-aware archival\n\n3. Baseline Engine:\n   - Implement automatic baseline calculation\n   - Add deviation detection\n   - Create seasonal adjustment\n\n4. Anomaly Detection:\n   - Implement statistical anomaly detection\n   - Add machine learning models\n   - Create real-time alerting\n\nFiles to create:\n- src/core/timeseries_db.py\n- src/core/data_retention.py\n- src/analytics/baseline_engine.py\n- src/analytics/anomaly_detection.py\n\nImplementation example for time-series database:\n```python\nfrom influxdb import InfluxDBClient\nimport datetime\n\nclass TimeSeriesDB:\n    def __init__(self, host='localhost', port=8086, username='admin', password='admin', database='metrics'):\n        self.client = InfluxDBClient(host, port, username, password, database)\n        self.database = database\n        self._ensure_database()\n    \n    def _ensure_database(self):\n        # Create database if it doesn't exist\n        dbs = self.client.get_list_database()\n        if {'name': self.database} not in dbs:\n            self.client.create_database(self.database)\n    \n    def write_metric(self, measurement, tags, fields, timestamp=None):\n        if timestamp is None:\n            timestamp = datetime.datetime.utcnow()\n            \n        point = {\n            \"measurement\": measurement,\n            \"tags\": tags,\n            \"time\": timestamp.isoformat(),\n            \"fields\": fields\n        }\n        \n        return self.client.write_points([point])\n    \n    def query_metrics(self, measurement, tags=None, start_time=None, end_time=None, limit=100):\n        query = f\"SELECT * FROM {measurement}\"\n        \n        # Add tag filters\n        if tags:\n            conditions = [f\"{k}='{v}'\" for k, v in tags.items()]\n            query += f\" WHERE {' AND '.join(conditions)}\"\n        \n        # Add time range\n        if start_time:\n            time_clause = f\"time >= '{start_time.isoformat()}'\"\n            if 'WHERE' in query:\n                query += f\" AND {time_clause}\"\n            else:\n                query += f\" WHERE {time_clause}\"\n                \n        if end_time:\n            time_clause = f\"time <= '{end_time.isoformat()}'\"\n            if 'WHERE' in query:\n                query += f\" AND {time_clause}\"\n            else:\n                query += f\" WHERE {time_clause}\"\n        \n        # Add limit\n        query += f\" LIMIT {limit}\"\n        \n        return self.client.query(query)\n```",
+        "testStrategy": "1. Load testing with millions of metrics\n2. Validate data retention policy enforcement\n3. Test baseline calculation accuracy\n4. Verify anomaly detection with known anomalies\n5. Performance testing for query response times\n6. Test data migration and archival processes",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement Real Performance Testing",
+        "description": "Integrate iPerf3 for bandwidth testing, implement traffic generation capabilities, QoS testing, and custom test endpoints.",
+        "details": "This task involves implementing real performance testing capabilities:\n\n1. iPerf3 Integration:\n   - Create iPerf3 client/server management\n   - Implement multi-stream testing\n   - Add bidirectional tests\n\n2. Traffic Generation:\n   - Implement various traffic patterns\n   - Add protocol-specific generators\n   - Create load testing capabilities\n\n3. QoS Testing:\n   - Implement DSCP marking validation\n   - Add traffic class testing\n   - Create shaping detection\n\n4. Custom Test Endpoints:\n   - Create test endpoint registry\n   - Implement health check system\n   - Add geographic distribution support\n\nFiles to modify/create:\n- src/diagnostics/performance_analysis.py\n- src/testing/traffic_generator.py (new)\n\nImplementation example for iPerf3 integration:\n```python\nimport subprocess\nimport json\nimport tempfile\n\nclass IPerf3Client:\n    def __init__(self, binary_path='iperf3'):\n        self.binary_path = binary_path\n    \n    def run_test(self, server, port=5201, duration=10, parallel=1, reverse=False, udp=False, bandwidth=None):\n        # Build command\n        cmd = [self.binary_path, '-c', server, '-p', str(port), '-t', str(duration), '-J']\n        \n        if parallel > 1:\n            cmd.extend(['-P', str(parallel)])\n        \n        if reverse:\n            cmd.append('-R')\n        \n        if udp:\n            cmd.append('-u')\n            if bandwidth:\n                cmd.extend(['-b', str(bandwidth)])\n        \n        # Run iperf3 test\n        try:\n            result = subprocess.run(cmd, capture_output=True, text=True, check=True)\n            return json.loads(result.stdout)\n        except subprocess.CalledProcessError as e:\n            if e.stdout:\n                try:\n                    return json.loads(e.stdout)\n                except json.JSONDecodeError:\n                    pass\n            raise RuntimeError(f\"iPerf3 test failed: {e}\")\n        except json.JSONDecodeError:\n            raise RuntimeError(\"Failed to parse iPerf3 output\")\n    \n    def analyze_results(self, results):\n        if 'error' in results:\n            return {\n                'status': 'error',\n                'message': results['error']\n            }\n        \n        # Extract key metrics\n        end_info = results.get('end', {})\n        \n        return {\n            'status': 'success',\n            'protocol': 'UDP' if results.get('udp') else 'TCP',\n            'sent_bytes': end_info.get('bytes_sent', 0),\n            'received_bytes': end_info.get('bytes_received', 0),\n            'bitrate_sender': end_info.get('sender', {}).get('bits_per_second', 0),\n            'bitrate_receiver': end_info.get('receiver', {}).get('bits_per_second', 0),\n            'jitter_ms': end_info.get('sum', {}).get('jitter_ms', 0) if results.get('udp') else None,\n            'lost_packets': end_info.get('sum', {}).get('lost_packets', 0) if results.get('udp') else None,\n            'lost_percent': end_info.get('sum', {}).get('lost_percent', 0) if results.get('udp') else None,\n            'retransmits': end_info.get('sender', {}).get('retransmits', 0) if not results.get('udp') else None\n        }\n```",
+        "testStrategy": "1. Benchmark against known network links\n2. Validate traffic generation patterns\n3. Test QoS detection with configured network equipment\n4. Verify multi-site testing capabilities\n5. Performance testing for concurrent tests\n6. Validate test results against reference measurements",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement Comprehensive Testing and Documentation",
+        "description": "Create comprehensive documentation and examples for how Claude Code can orchestrate the SuperSleuth Network toolkit, including prompt templates and guidance for IT professionals.",
+        "status": "done",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "priority": "high",
+        "details": "This task involves implementing comprehensive documentation and examples for Claude Code integration with SuperSleuth Network toolkit:\n\n1. Claude Code Integration Documentation:\n   - Create overview of how Claude Code can orchestrate SuperSleuth\n   - Document integration patterns and best practices\n   - Provide examples of natural language to diagnostic workflow translation\n\n2. Prompt Templates:\n   - Develop templates for common network diagnostic scenarios\n   - Create structured prompts for troubleshooting workflows\n   - Document prompt engineering techniques for network diagnostics\n\n3. IT Professional Guidance:\n   - Create user guides for IT professionals\n   - Document natural language request patterns\n   - Provide examples of effective vs. ineffective prompts\n\n4. Diagnostic Workflow Examples:\n   - Document examples of combining multiple diagnostic modules\n   - Create case studies of complex troubleshooting scenarios\n   - Show how Claude Code interprets ambiguous requests\n\n5. Documentation:\n   - Create API documentation for Claude Code integration\n   - Implement user documentation for IT professionals\n   - Add developer documentation for extending the system\n\nFiles to create:\n- docs/claude-integration/ (directory structure)\n- docs/prompt-templates/\n- docs/user-guides/\n- docs/workflow-examples/\n- docs/api/\n\nImplementation example for Claude Code integration:\n```python\n# Example of how Claude Code can orchestrate SuperSleuth modules\n\ndef process_diagnostic_request(natural_language_request):\n    \"\"\"Process a natural language request and orchestrate the appropriate diagnostic tools.\n    \n    Args:\n        natural_language_request (str): The IT professional's natural language request\n        \n    Returns:\n        dict: Results from the diagnostic workflow\n        \n    Example:\n        >>> results = process_diagnostic_request(\"Check if server X can connect to database Y and verify latency\")\n        >>> print(results['connectivity']['status'])\n        Connected\n        >>> print(results['latency']['value'])\n        15.3ms\n    \"\"\"\n    # Claude Code would analyze the request and determine which modules to use\n    modules_to_run = analyze_request(natural_language_request)\n    \n    results = {}\n    for module in modules_to_run:\n        if module == 'connectivity':\n            from src.core.network import check_connectivity\n            results['connectivity'] = check_connectivity(extract_endpoints(natural_language_request))\n        elif module == 'latency':\n            from src.core.performance import measure_latency\n            results['latency'] = measure_latency(extract_endpoints(natural_language_request))\n        # Additional modules as needed\n    \n    return results\n```\n\nExample prompt template:\n```\nSystem: You are Claude Code, an AI assistant that can help diagnose network issues using the SuperSleuth toolkit.\n\nUser: {{user_request}}\n\nAssistant: I'll help diagnose this network issue using SuperSleuth. Let me break down what I'll do:\n\n1. First, I'll {{first_diagnostic_step}}\n2. Then, I'll {{second_diagnostic_step}}\n3. Finally, I'll {{final_diagnostic_step}}\n\nHere's the code I'll execute:\n```python\n# Import necessary modules\nfrom supersleuth import {{required_modules}}\n\n# Set up the diagnostic workflow\ndef diagnose_issue():\n    # Step 1: {{first_diagnostic_step_code}}\n    \n    # Step 2: {{second_diagnostic_step_code}}\n    \n    # Step 3: {{final_diagnostic_step_code}}\n    \n    return results\n\n# Execute and return results\ndiagnose_issue()\n```\n\nWould you like me to execute this diagnostic workflow?\n```",
+        "testStrategy": "1. Validate documentation accuracy and completeness\n2. Test Claude Code integration examples with real-world scenarios\n3. Gather IT professional feedback on prompt templates\n4. Verify effectiveness of workflow examples\n5. User acceptance testing of documentation\n6. Developer feedback on API documentation\n7. Test natural language processing accuracy for various diagnostic requests",
+        "subtasks": []
+      }
+    ],
     "metadata": {
       "created": "2025-07-16T01:22:21.988Z",
-      "updated": "2025-07-16T01:22:21.988Z",
+      "updated": "2025-07-16T21:24:02.727Z",
       "description": "Tasks for master context"
     }
   }

@@ -69,7 +69,7 @@ class PerformanceAnalysis(BaseDiagnostic):
         }
     
     def _run_diagnostic(self, result: DiagnosticResult):
-        """Execute performance analysis diagnostic"
+        """Execute performance analysis diagnostic"""
         
         try:
             self.logger.info("Starting performance analysis")
@@ -490,7 +490,7 @@ class PerformanceAnalysis(BaseDiagnostic):
         
         try:
             start_time = time.time()
-            cmd = ['curl', '-o', '/dev/null', '-s', '-w', '%{size_download}\\n%{speed_download}', test_url]
+            cmd = ['curl', '-o', '/dev/null', '-s', '-w', '%{size_download}\n%{speed_download}', test_url]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             
             if result.returncode == 0:
@@ -732,16 +732,101 @@ class PerformanceAnalysis(BaseDiagnostic):
         return validation_results
     
     def _analyze_performance_trends(self, current_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze performance trends if historical data available"""
+        """Analyze performance trends based on recent data points"""
         
-        # In a real implementation, this would query historical data
-        # For now, return placeholder analysis
+        # Store recent metrics for trend analysis
+        if not hasattr(self, '_metric_history'):
+            self._metric_history = []
+        
+        # Add current data point
+        self._metric_history.append({
+            'timestamp': datetime.now(),
+            'metrics': current_data
+        })
+        
+        # Keep only last 10 data points
+        self._metric_history = self._metric_history[-10:]
+        
+        # Need at least 3 data points for trend analysis
+        if len(self._metric_history) < 3:
+            return {
+                'trend_available': False,
+                'message': 'Insufficient data points for trend analysis',
+                'recommendation': 'Continue monitoring to establish performance baseline',
+                'data_points_collected': len(self._metric_history),
+                'data_points_needed': 3
+            }
+        
+        # Calculate trends
+        trends = {}
+        
+        # Analyze bandwidth trends
+        if 'bandwidth_test' in current_data:
+            bandwidth_values = [
+                h['metrics'].get('bandwidth_test', {}).get('download_mbps', 0)
+                for h in self._metric_history
+                if 'bandwidth_test' in h['metrics']
+            ]
+            if len(bandwidth_values) >= 3:
+                # Calculate simple trend (increasing, decreasing, stable)
+                avg_first_half = sum(bandwidth_values[:len(bandwidth_values)//2]) / (len(bandwidth_values)//2)
+                avg_second_half = sum(bandwidth_values[len(bandwidth_values)//2:]) / (len(bandwidth_values) - len(bandwidth_values)//2)
+                
+                if avg_second_half > avg_first_half * 1.1:
+                    trends['bandwidth'] = 'improving'
+                elif avg_second_half < avg_first_half * 0.9:
+                    trends['bandwidth'] = 'degrading'
+                else:
+                    trends['bandwidth'] = 'stable'
+        
+        # Analyze latency trends
+        if 'latency_test' in current_data:
+            latency_values = [
+                h['metrics'].get('latency_test', {}).get('average_ms', 0)
+                for h in self._metric_history
+                if 'latency_test' in h['metrics']
+            ]
+            if len(latency_values) >= 3:
+                avg_first_half = sum(latency_values[:len(latency_values)//2]) / (len(latency_values)//2)
+                avg_second_half = sum(latency_values[len(latency_values)//2:]) / (len(latency_values) - len(latency_values)//2)
+                
+                # For latency, lower is better
+                if avg_second_half < avg_first_half * 0.9:
+                    trends['latency'] = 'improving'
+                elif avg_second_half > avg_first_half * 1.1:
+                    trends['latency'] = 'degrading'
+                else:
+                    trends['latency'] = 'stable'
         
         return {
-            'trend_available': False,
-            'message': 'Historical data not available for trend analysis',
-            'recommendation': 'Enable continuous monitoring to build performance baseline'
+            'trend_available': True,
+            'data_points': len(self._metric_history),
+            'analysis_period': {
+                'start': self._metric_history[0]['timestamp'].isoformat(),
+                'end': self._metric_history[-1]['timestamp'].isoformat()
+            },
+            'trends': trends,
+            'recommendations': self._generate_trend_recommendations(trends)
         }
+    
+    def _generate_trend_recommendations(self, trends: Dict[str, str]) -> List[str]:
+        """Generate recommendations based on trends"""
+        recommendations = []
+        
+        if trends.get('bandwidth') == 'degrading':
+            recommendations.append('Bandwidth is degrading - check for network congestion or interference')
+        elif trends.get('bandwidth') == 'improving':
+            recommendations.append('Bandwidth is improving - current conditions are favorable')
+            
+        if trends.get('latency') == 'degrading':
+            recommendations.append('Latency is increasing - investigate routing or congestion issues')
+        elif trends.get('latency') == 'improving':
+            recommendations.append('Latency is improving - network path optimization is working')
+            
+        if not recommendations:
+            recommendations.append('Performance metrics are stable')
+            
+        return recommendations
     
     def _calculate_performance_score(self, performance_data: Dict[str, Any], 
                                    sla_validation: Dict[str, Any]) -> int:
