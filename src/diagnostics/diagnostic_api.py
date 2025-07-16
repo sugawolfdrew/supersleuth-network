@@ -331,14 +331,121 @@ class NetworkDiagnosticAPI:
         
     def _run_network_discovery(self, target: str, **kwargs) -> Dict[str, Any]:
         """Run network discovery diagnostic."""
-        # This would integrate with the existing NetworkDiscovery class
-        # For now, return a placeholder
-        return {
-            'target': target,
-            'scan_type': 'network_discovery',
-            'message': 'Network discovery requires subnet authorization',
-            'timestamp': datetime.now().isoformat()
+        # Import network discovery functionality
+        try:
+            from . import port_scanner
+            
+            # Determine if target is a subnet or single host
+            is_subnet = '/' in target or '*' in target
+            
+            if is_subnet:
+                # For subnet scanning, require explicit authorization
+                if not kwargs.get('authorized', False):
+                    return {
+                        'target': target,
+                        'scan_type': 'network_discovery',
+                        'status': 'authorization_required',
+                        'message': 'Subnet scanning requires explicit authorization',
+                        'timestamp': datetime.now().isoformat()
+                    }
+                
+                # Perform subnet discovery
+                return self._discover_subnet(target, **kwargs)
+            else:
+                # Single host discovery
+                return self._discover_single_host(target, **kwargs)
+                
+        except Exception as e:
+            logger.error(f"Network discovery error: {e}")
+            return {
+                'target': target,
+                'scan_type': 'network_discovery',
+                'status': 'error',
+                'error': str(e),
+                'timestamp': datetime.now().isoformat()
+            }
+    
+    def _discover_single_host(self, host: str, **kwargs) -> Dict[str, Any]:
+        """Discover services on a single host."""
+        from . import port_scanner, service_detection, os_fingerprinting
+        
+        result = {
+            'target': host,
+            'scan_type': 'host_discovery',
+            'timestamp': datetime.now().isoformat(),
+            'discovered_services': [],
+            'os_detection': {},
+            'status': 'completed'
         }
+        
+        # Common ports to check
+        common_ports = [21, 22, 23, 25, 80, 110, 139, 443, 445, 3306, 3389, 5432, 8080, 8443]
+        
+        # Scan ports
+        for port in common_ports:
+            port_result = port_scanner.scan_tcp_port(host, port, timeout=1.0)
+            if port_result.get('state') == 'open':
+                # Detect service
+                service_info = service_detection.detect_service_banner(host, port)
+                result['discovered_services'].append({
+                    'port': port,
+                    'state': 'open',
+                    'service': service_info.get('service', 'unknown'),
+                    'banner': service_info.get('banner', '')
+                })
+        
+        # OS fingerprinting
+        os_result = os_fingerprinting.detect_os_comprehensive(host)
+        result['os_detection'] = os_result
+        
+        return result
+    
+    def _discover_subnet(self, subnet: str, **kwargs) -> Dict[str, Any]:
+        """Discover hosts in a subnet."""
+        import ipaddress
+        
+        result = {
+            'target': subnet,
+            'scan_type': 'subnet_discovery',
+            'timestamp': datetime.now().isoformat(),
+            'discovered_hosts': [],
+            'total_scanned': 0,
+            'status': 'completed'
+        }
+        
+        try:
+            # Parse subnet
+            network = ipaddress.ip_network(subnet, strict=False)
+            max_hosts = kwargs.get('max_hosts', 50)  # Limit for safety
+            
+            # Quick ping sweep first (simulated with common port check)
+            for idx, ip in enumerate(network.hosts()):
+                if idx >= max_hosts:
+                    result['message'] = f'Scan limited to {max_hosts} hosts'
+                    break
+                    
+                ip_str = str(ip)
+                result['total_scanned'] += 1
+                
+                # Quick check on common ports
+                is_alive = False
+                for port in [80, 443, 22]:
+                    if port_scanner.scan_tcp_port(ip_str, port, timeout=0.5).get('state') == 'open':
+                        is_alive = True
+                        break
+                
+                if is_alive:
+                    result['discovered_hosts'].append({
+                        'ip': ip_str,
+                        'status': 'alive',
+                        'response_time': 'N/A'
+                    })
+            
+        except ValueError as e:
+            result['status'] = 'error'
+            result['error'] = f'Invalid subnet format: {str(e)}'
+            
+        return result
         
     def _run_full_scan(self, target: str, **kwargs) -> Dict[str, Any]:
         """Run comprehensive full scan."""
