@@ -61,7 +61,16 @@ dmypy.json
 # tasks/
 
 # Test files
-standalone_test.py
-test_network_scan.py
-network_assessment.py
-network_assessment_results.json 
+*test*.py
+test_*.py
+*_test.py
+network_assessment*.py
+network_assessment*.json
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store 
