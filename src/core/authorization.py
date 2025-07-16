@@ -1,16 +1,24 @@
 """
 Enterprise authorization and compliance framework
+
+This module provides authorization controls that integrate with the
+authentication functions in auth_functions.py and auth_modules/.
 """
 
 import hashlib
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import json
 from pathlib import Path
 
 from ..utils.logger import get_logger, get_audit_logger
+from .auth_functions import (
+    authenticate_user,
+    check_user_authorization,
+    get_auth_capabilities
+)
 
 
 class RiskLevel(Enum):
@@ -78,7 +86,7 @@ class AuthorizationRequest:
 
 
 class EnterpriseAuthorization:
-    """Manages enterprise authorization workflows"""
+    """Manages enterprise authorization workflows with authentication integration"""
     
     def __init__(self, client_config: Dict):
         self.client_config = client_config
@@ -88,6 +96,11 @@ class EnterpriseAuthorization:
         self.approved_requests: Dict[str, AuthorizationRequest] = {}
         self.authorization_cache_file = Path("auth_cache.json")
         self._load_authorization_cache()
+        
+        # Authentication configuration
+        self.auth_method = client_config.get('auth_method', 'local')
+        self.auth_config = client_config.get('auth_config', {})
+        self.required_groups = client_config.get('required_groups', [])
     
     def request_authorization(self, request: AuthorizationRequest) -> str:
         """Request authorization for an action"""
@@ -400,3 +413,180 @@ class ComplianceValidator:
             result['warnings'].append("Data must be deleted after engagement per GDPR requirements")
         
         return result
+    
+# Add authentication integration functions at module level
+
+def authenticate_and_authorize(
+    client_config: Dict,
+    username: str,
+    password: str,
+    action: str,
+    scope: str
+) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    """
+    Authenticate user and check authorization for specific action.
+    
+    This integrates authentication with authorization, allowing Claude Code
+    to orchestrate both in a single workflow.
+    
+    Args:
+        client_config: Client configuration with auth settings
+        username: User identifier
+        password: User password or token
+        action: Action to authorize
+        scope: Scope of the action
+        
+    Returns:
+        Tuple of (success, message, auth_details)
+    """
+    # Extract auth config
+    auth_method = client_config.get('auth_method', 'local')
+    auth_config = client_config.get('auth_config', {})
+    required_groups = client_config.get('required_groups', [])
+    
+    # Step 1: Authenticate user
+    auth_result = authenticate_user(
+        username=username,
+        password=password,
+        method=auth_method,
+        required_groups=required_groups,
+        **auth_config
+    )
+    
+    if not auth_result['success']:
+        return False, "Authentication failed", auth_result
+    
+    if not auth_result.get('authorized', False):
+        missing_groups = [g for g in required_groups 
+                        if g not in auth_result.get('groups', [])]
+        return False, f"Missing required groups: {', '.join(missing_groups)}", auth_result
+    
+    # Step 2: Create authorization instance
+    auth_instance = EnterpriseAuthorization(client_config)
+    
+    # Step 3: Check if action is pre-authorized
+    if auth_instance.check_authorization(action, scope):
+        return True, "Action pre-authorized", auth_result
+    
+    # Step 4: Create authorization request
+    risk_level = _assess_risk_level(action, scope)
+    
+    auth_request = AuthorizationRequest(
+        client_name=client_config['client_name'],
+        sow_reference=client_config.get('sow_reference', 'N/A'),
+        action=action,
+        scope=scope,
+        risk_level=risk_level,
+        business_justification=f"Requested by authenticated user: {username}",
+        systems_affected=[scope],
+        data_access_level="Read-only" if "read" in action.lower() else "Read-write",
+        execution_window="Immediate",
+        estimated_duration=30,
+        rollback_plan="No changes will be made" if "read" in action.lower() else "Manual rollback required"
+    )
+    
+    # Step 5: Request authorization
+    auth_prompt = auth_instance.request_authorization(auth_request)
+    
+    return False, f"Authorization required: {auth_request.request_id}", {
+        'auth_result': auth_result,
+        'auth_request': auth_request.to_dict(),
+        'prompt': auth_prompt
+    }
+
+
+def _assess_risk_level(action: str, scope: str) -> RiskLevel:
+    """Assess risk level based on action and scope"""
+    action_lower = action.lower()
+    
+    if any(word in action_lower for word in ['read', 'view', 'list', 'get']):
+        return RiskLevel.LOW
+    elif any(word in action_lower for word in ['scan', 'test', 'check']):
+        return RiskLevel.MEDIUM
+    elif any(word in action_lower for word in ['modify', 'update', 'configure']):
+        return RiskLevel.HIGH
+    elif any(word in action_lower for word in ['delete', 'remove', 'shutdown']):
+        return RiskLevel.CRITICAL
+    else:
+        return RiskLevel.MEDIUM
+
+
+def get_user_permissions(
+    client_config: Dict,
+    username: str
+) -> Dict[str, Any]:
+    """
+    Get user's permissions based on group membership.
+    
+    This allows Claude Code to understand what a user can do
+    based on their authentication and group membership.
+    """
+    auth_method = client_config.get('auth_method', 'local')
+    auth_config = client_config.get('auth_config', {})
+    
+    # Check user's groups
+    auth_check = check_user_authorization(
+        username=username,
+        required_groups=[],  # Get all groups
+        auth_method=auth_method,
+        **auth_config
+    )
+    
+    if not auth_check.get('authorized', False):
+        return {
+            'authorized': False,
+            'permissions': [],
+            'message': 'User not found or not authorized'
+        }
+    
+    # Map groups to permissions
+    user_groups = auth_check.get('details', {}).get('user_groups', [])
+    permissions = _map_groups_to_permissions(user_groups)
+    
+    return {
+        'authorized': True,
+        'groups': user_groups,
+        'permissions': permissions,
+        'risk_levels': _get_allowed_risk_levels(user_groups)
+    }
+
+
+def _map_groups_to_permissions(groups: List[str]) -> List[str]:
+    """Map user groups to permissions"""
+    permissions = []
+    
+    # Example group to permission mapping
+    group_permissions = {
+        'network_readonly': ['view_network', 'read_diagnostics'],
+        'network_operators': ['view_network', 'read_diagnostics', 'run_scans'],
+        'network_admins': ['view_network', 'read_diagnostics', 'run_scans', 
+                          'modify_config', 'perform_remediation'],
+        'security_team': ['view_network', 'read_diagnostics', 'run_security_scans',
+                         'view_vulnerabilities'],
+        'domain admins': ['all_permissions']
+    }
+    
+    for group in groups:
+        group_lower = group.lower()
+        for mapped_group, perms in group_permissions.items():
+            if mapped_group in group_lower:
+                permissions.extend(perms)
+    
+    # Remove duplicates
+    return list(set(permissions))
+
+
+def _get_allowed_risk_levels(groups: List[str]) -> List[str]:
+    """Get allowed risk levels based on user groups"""
+    # Admin groups can approve higher risk
+    admin_groups = ['admins', 'administrators', 'network_admins', 'domain admins']
+    manager_groups = ['managers', 'supervisors', 'team_leads']
+    
+    groups_lower = [g.lower() for g in groups]
+    
+    if any(admin in group for admin in admin_groups for group in groups_lower):
+        return [level.value for level in RiskLevel]
+    elif any(manager in group for manager in manager_groups for group in groups_lower):
+        return [RiskLevel.MINIMAL.value, RiskLevel.LOW.value, RiskLevel.MEDIUM.value]
+    else:
+        return [RiskLevel.MINIMAL.value, RiskLevel.LOW.value]

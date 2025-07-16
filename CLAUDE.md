@@ -248,6 +248,34 @@ Based on your description, I'm creating these tools:
             return self.interpret_and_respond(user_input)
 ```
 
+## Authentication Framework (OPTIONAL - Not Active by Default)
+
+SuperSleuth includes an **optional authentication framework** that organizations can enable if needed. 
+
+### 🎯 Current Status: Demo/Framework Only
+- ✅ **No authentication required** - All tools work immediately
+- ✅ **Framework available** - Organizations CAN add auth if they want
+- ✅ **Example code included** - Shows how LDAP/AD would work
+- ✅ **Claude Code ready** - Can orchestrate auth when configured
+
+### When Organizations Enable Auth:
+```python
+# They configure their requirements
+auth_config = {
+    'method': 'active_directory',
+    'domain': 'company.local',
+    'required_groups': ['IT-Staff']
+}
+
+# Claude Code respects these settings
+if client_has_auth_enabled:
+    orchestrate_authentication(auth_config)
+else:
+    proceed_without_auth()  # Default behavior
+```
+
+See `docs/authentication/` for full framework documentation.
+
 ## CRITICAL: Enterprise Security & Compliance Framework
 
 ### MANDATORY: Client Environment Protections

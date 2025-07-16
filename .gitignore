@@ -58,4 +58,10 @@ dmypy.json
 
 # Task files (keep these for now)
 # tasks.json
-# tasks/ 
+# tasks/
+
+# Test files
+standalone_test.py
+test_network_scan.py
+network_assessment.py
+network_assessment_results.json 
