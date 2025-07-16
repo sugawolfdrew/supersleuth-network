@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 
-from .diagnostic import DiagnosticSuite, AdaptiveDiagnosticBrain
+from .diagnostic import DiagnosticSuite, AdaptiveDiagnosticBrain, BaseDiagnostic
 from .authorization import EnterpriseAuthorization, AuthorizationRequest, RiskLevel
 from ..diagnostics.network_discovery import NetworkDiscovery
 from ..diagnostics.performance_analysis import PerformanceAnalysis

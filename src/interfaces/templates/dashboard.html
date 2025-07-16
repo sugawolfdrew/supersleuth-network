@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperSleuth Network Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>🔍 SuperSleuth Network Dashboard</h1>
+            <div class="status-bar">
+                <span id="connection-status" class="status-indicator">●</span>
+                <span id="session-info">No Active Session</span>
+                <span id="current-time"></span>
+            </div>
+        </header>
+        
+        <main>
+            <!-- Metrics Overview -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Network Health</h3>
+                    <div class="metric-value">
+                        <span id="health-score">--</span>%
+                    </div>
+                    <div class="metric-chart">
+                        <canvas id="health-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Active Devices</h3>
+                    <div class="metric-value">
+                        <span id="device-count">--</span>
+                    </div>
+                    <div class="device-types" id="device-breakdown"></div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Bandwidth Usage</h3>
+                    <div class="metric-value">
+                        <span id="bandwidth-usage">--</span>%
+                    </div>
+                    <div class="bandwidth-details">
+                        <small>Download: <span id="download-speed">--</span> Mbps</small>
+                        <small>Upload: <span id="upload-speed">--</span> Mbps</small>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Security Score</h3>
+                    <div class="metric-value">
+                        <span id="security-score">--</span>%
+                    </div>
+                    <div class="security-status" id="security-status">
+                        <small>Status: <span id="security-level">--</span></small>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Control Panel -->
+            <section class="control-panel">
+                <h2>Diagnostic Controls</h2>
+                <div class="controls">
+                    <button onclick="runDiagnostic('network_discovery')" class="btn btn-primary">
+                        🔍 Network Discovery
+                    </button>
+                    <button onclick="runDiagnostic('performance_analysis')" class="btn btn-primary">
+                        📊 Performance Test
+                    </button>
+                    <button onclick="runDiagnostic('wifi_analysis')" class="btn btn-primary">
+                        📡 WiFi Analysis
+                    </button>
+                    <button onclick="runDiagnostic('security_assessment')" class="btn btn-primary">
+                        🔒 Security Scan
+                    </button>
+                </div>
+                
+                <div class="monitoring-controls">
+                    <button id="monitor-toggle" onclick="toggleMonitoring()" class="btn btn-secondary">
+                        ▶️ Start Monitoring
+                    </button>
+                    <button onclick="generateReport('it_professional')" class="btn btn-secondary">
+                        📄 Generate IT Report
+                    </button>
+                    <button onclick="generateReport('business')" class="btn btn-secondary">
+                        📄 Generate Business Report
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Results Panel -->
+            <section class="results-panel">
+                <div class="recommendations">
+                    <h2>📋 Current Recommendations</h2>
+                    <ul id="recommendations-list">
+                        <li>No recommendations yet - run diagnostics first</li>
+                    </ul>
+                </div>
+                
+                <div class="diagnostic-history">
+                    <h2>📊 Recent Diagnostics</h2>
+                    <div id="history-list">
+                        <p>No diagnostics run yet</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Alerts Panel -->
+            <section class="alerts-panel">
+                <h2>🚨 Active Alerts</h2>
+                <div id="alerts-list">
+                    <p class="no-alerts">No active alerts</p>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

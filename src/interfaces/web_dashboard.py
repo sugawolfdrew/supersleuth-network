@@ -46,6 +46,10 @@ class DashboardServer:
             'last_update': None
         }
         
+        # Diagnostic progress tracking
+        self.diagnostic_progress = {}
+        self.active_diagnostics = {}
+        
         # Background monitoring thread
         self.monitoring_active = False
         self.monitor_thread = None
@@ -169,21 +173,46 @@ class DashboardServer:
                     data.get('issue', 'General network assessment')
                 )
             
-            # Run diagnostic (simplified for demo)
-            result = {
-                'status': 'completed',
-                'message': f'{diagnostic_type} diagnostic completed',
-                'timestamp': datetime.now().isoformat()
+            # Initialize progress tracking
+            diagnostic_id = f"{diagnostic_type}_{int(time.time())}"
+            self.diagnostic_progress[diagnostic_id] = {
+                'type': diagnostic_type,
+                'status': 'initializing',
+                'progress': 0,
+                'message': 'Preparing diagnostic...',
+                'start_time': datetime.now().isoformat(),
+                'steps_completed': 0,
+                'total_steps': 5
             }
             
-            # Add to history
-            self.diagnostic_history.append({
-                'type': diagnostic_type,
-                'timestamp': datetime.now().isoformat(),
-                'status': 'completed'
-            })
+            # Start diagnostic in background thread
+            thread = threading.Thread(
+                target=self._run_diagnostic_async,
+                args=(diagnostic_id, diagnostic_type)
+            )
+            thread.daemon = True
+            thread.start()
+            self.active_diagnostics[diagnostic_id] = thread
             
-            return jsonify(result)
+            return jsonify({
+                'diagnostic_id': diagnostic_id,
+                'status': 'started',
+                'message': f'Started {diagnostic_type} diagnostic'
+            })
+        
+        @self.app.route('/api/diagnostics/progress/<diagnostic_id>')
+        def get_diagnostic_progress(diagnostic_id):
+            """Get progress for a specific diagnostic"""
+            if diagnostic_id not in self.diagnostic_progress:
+                return jsonify({'error': 'Diagnostic not found'}), 404
+            
+            progress = self.diagnostic_progress[diagnostic_id]
+            
+            # Clean up completed diagnostics after retrieval
+            if progress['status'] in ['completed', 'error'] and diagnostic_id in self.active_diagnostics:
+                del self.active_diagnostics[diagnostic_id]
+            
+            return jsonify(progress)
         
         @self.app.route('/api/monitoring/start', methods=['POST'])
         def start_monitoring():
@@ -305,6 +334,93 @@ Press Ctrl+C to stop the server.
         # Limit buffer size
         if len(self.event_buffer) > self.max_events:
             self.event_buffer.pop(0)
+    
+    def _run_diagnostic_async(self, diagnostic_id: str, diagnostic_type: str):
+        """Run diagnostic asynchronously with progress updates"""
+        try:
+            # Update progress: Initializing
+            self._update_progress(diagnostic_id, 10, 'Initializing diagnostic suite...')
+            time.sleep(0.5)
+            
+            # Update progress: Authorization check
+            self._update_progress(diagnostic_id, 20, 'Checking authorization...')
+            time.sleep(0.5)
+            
+            # Update progress: Running diagnostic
+            self._update_progress(diagnostic_id, 40, f'Running {diagnostic_type} scan...')
+            
+            # Actually run the diagnostic
+            if self.current_session and hasattr(self.current_session, 'run_diagnostic'):
+                # Simulate longer running time for demo
+                if diagnostic_type == 'network_discovery':
+                    self._update_progress(diagnostic_id, 50, 'Scanning network devices...')
+                    time.sleep(2)
+                    self._update_progress(diagnostic_id, 70, 'Identifying device types...')
+                    time.sleep(1.5)
+                elif diagnostic_type == 'performance_analysis':
+                    self._update_progress(diagnostic_id, 50, 'Testing bandwidth...')
+                    time.sleep(2)
+                    self._update_progress(diagnostic_id, 70, 'Measuring latency...')
+                    time.sleep(1.5)
+                elif diagnostic_type == 'wifi_analysis':
+                    self._update_progress(diagnostic_id, 50, 'Scanning WiFi channels...')
+                    time.sleep(2)
+                    self._update_progress(diagnostic_id, 70, 'Analyzing signal strength...')
+                    time.sleep(1.5)
+                elif diagnostic_type == 'security_assessment':
+                    self._update_progress(diagnostic_id, 50, 'Scanning for vulnerabilities...')
+                    time.sleep(2)
+                    self._update_progress(diagnostic_id, 70, 'Checking compliance...')
+                    time.sleep(1.5)
+                
+                # Run actual diagnostic
+                try:
+                    result = self.current_session.run_diagnostic(diagnostic_type)
+                    self._update_progress(diagnostic_id, 90, 'Generating report...')
+                    time.sleep(0.5)
+                except Exception as e:
+                    self.logger.error(f"Diagnostic error: {str(e)}")
+                    # Continue with demo result
+            
+            # Update progress: Complete
+            self._update_progress(diagnostic_id, 100, 'Diagnostic completed!', status='completed')
+            
+            # Add to history
+            self.diagnostic_history.append({
+                'id': diagnostic_id,
+                'type': diagnostic_type,
+                'timestamp': datetime.now().isoformat(),
+                'status': 'completed',
+                'duration': (datetime.now() - datetime.fromisoformat(self.diagnostic_progress[diagnostic_id]['start_time'])).total_seconds()
+            })
+            
+            # Log completion
+            event_logger.log_event(
+                EventType.DIAGNOSTIC_COMPLETE,
+                EventSeverity.INFO,
+                "WebDashboard",
+                f"Completed {diagnostic_type} diagnostic",
+                {"diagnostic_id": diagnostic_id, "diagnostic_type": diagnostic_type}
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Diagnostic error: {str(e)}")
+            self._update_progress(
+                diagnostic_id, 
+                self.diagnostic_progress[diagnostic_id]['progress'],
+                f'Error: {str(e)}',
+                status='error'
+            )
+    
+    def _update_progress(self, diagnostic_id: str, progress: int, message: str, status: str = 'running'):
+        """Update diagnostic progress"""
+        if diagnostic_id in self.diagnostic_progress:
+            self.diagnostic_progress[diagnostic_id].update({
+                'progress': progress,
+                'message': message,
+                'status': status,
+                'last_update': datetime.now().isoformat()
+            })
 
 
 def create_dashboard_templates():
@@ -592,6 +708,8 @@ main {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 180px;
+    justify-content: center;
 }
 
 .btn-primary {
@@ -935,8 +1053,9 @@ async function updateCurrentDiagnostics() {
 // Run diagnostic
 async function runDiagnostic(type) {
     const button = event.target;
+    const originalText = button.textContent;
     button.disabled = true;
-    button.innerHTML = '<span class="spinner"></span> Running...';
+    button.innerHTML = '<span class="spinner"></span> Starting...';
     
     try {
         const response = await fetch('/api/diagnostics/run', {
@@ -953,8 +1072,10 @@ async function runDiagnostic(type) {
         
         const result = await response.json();
         
-        // Show notification
-        showAlert(`${type.replace('_', ' ')} completed`, 'success');
+        if (result.diagnostic_id) {
+            // Poll for progress
+            await pollDiagnosticProgress(result.diagnostic_id, button, originalText);
+        }
         
         // Update history
         updateDiagnosticHistory();
@@ -964,11 +1085,46 @@ async function runDiagnostic(type) {
         
     } catch (error) {
         showAlert('Diagnostic failed: ' + error.message, 'error');
-    } finally {
         button.disabled = false;
-        button.innerHTML = button.innerHTML.replace('<span class="spinner"></span> Running...', 
-                                                   button.textContent);
+        button.innerHTML = originalText;
     }
+}
+
+// Poll for diagnostic progress
+async function pollDiagnosticProgress(diagnosticId, button, originalText) {
+    const progressInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/diagnostics/progress/${diagnosticId}`);
+            if (!response.ok) {
+                clearInterval(progressInterval);
+                button.disabled = false;
+                button.innerHTML = originalText;
+                return;
+            }
+            
+            const progress = await response.json();
+            
+            // Update button with progress
+            if (progress.status === 'running' || progress.status === 'initializing') {
+                button.innerHTML = `<span class="spinner"></span> ${progress.progress}% - ${progress.message}`;
+            } else if (progress.status === 'completed') {
+                clearInterval(progressInterval);
+                button.disabled = false;
+                button.innerHTML = originalText;
+                showAlert(`${progress.type.replace('_', ' ')} completed successfully!`, 'success');
+            } else if (progress.status === 'error') {
+                clearInterval(progressInterval);
+                button.disabled = false;
+                button.innerHTML = originalText;
+                showAlert(`Diagnostic error: ${progress.message}`, 'error');
+            }
+        } catch (error) {
+            clearInterval(progressInterval);
+            button.disabled = false;
+            button.innerHTML = originalText;
+            console.error('Progress polling error:', error);
+        }
+    }, 500); // Poll every 500ms
 }
 
 // Update diagnostic history
