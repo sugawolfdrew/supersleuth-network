@@ -31,7 +31,7 @@ SuperSleuth Network transforms VSCode into an intelligent diagnostic workspace t
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/supersleuth/network.git
+git clone https://github.com/sugawolfdrew/supersleuth-network.git
 cd supersleuth-network
 ```
 
@@ -182,4 +182,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For professional support and enterprise licensing:
 - Email: support@supersleuth.network
 - Documentation: https://docs.supersleuth.network
-- Issues: https://github.com/supersleuth/network/issues
+- Issues: https://github.com/sugawolfdrew/supersleuth-network/issues
